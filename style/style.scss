@@ -7,10 +7,8 @@ $strip-color: #4B4B99;
 $highlight-color: #ff5c5c;
 $fonts: 'General Sans', sans-serif;
 $transition: 0.3s ease-in-out;
-// Variables
-$sidebar-width: 300px; // Width of the sidebar
+$sidebar-width: 300px;
 $transition-duration: 0.3s;
-
 * { 
     margin: 0;
     padding: 0;
@@ -30,7 +28,6 @@ body {
   min-height: 100vh;
 }
 
-// Sidebar Styling
 .sidebar {
     
   width: $sidebar-width;
@@ -612,3 +609,4 @@ body {
         }
     }
 }
+    

@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const accountForm = document.getElementById('account-form');
     const links = document.querySelectorAll('.nav-link[data-section]');
     const mainContent = document.getElementById('main-content-id');
-    const dropdownLinks = document.querySelectorAll('.nav-link[onclick="toggleDropdown(event)"]');    
-    
+    const dropdownLinks = document.querySelectorAll('.nav-link[onclick="toggleDropdown(event)"]');
+
     dropdownLinks.forEach(link => {
         link.addEventListener('click', toggleDropdown);
     });
+
     function toggleDropdown(event) {
         event.preventDefault();
         const parentItem = event.currentTarget.parentElement;
@@ -24,12 +24,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 mainContent.innerHTML = data;
                 setActiveLink(section);
 
-                // Special behavior for specific sections (like Overall Sales Report or Dashboard)
                 if (section === 'overall-sales') {
                     initializeServiceSalesChart();
-                    initializeMonthlySalesTrendChart();  // Initialize the chart for overall sales report
+                    initializeMonthlySalesTrendChart();
                 } else if (section === 'dashboard') {
-                    initializeDashboardChart();  // Initialize dashboard chart if needed
+                    initializeDashboardChart();
+                } else if (section === 'create-account') {
+                    attachCreateAccountFormHandler();
                 }
             })
             .catch(error => {
@@ -38,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    // Set active link when a link is clicked
     function setActiveLink(activeSection) {
         links.forEach(link => {
             link.classList.remove('active');
@@ -48,6 +48,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function attachCreateAccountFormHandler() {
+        const form = document.getElementById('account-form');
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/create-account', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (response.ok) {
+                        alert('Account created successfully!');
+                        form.reset(); // Clear the form after submission
+                    } else {
+                        const errorMessage = await response.text();
+                        alert(`Failed to create account: ${errorMessage}`);
+                    }
+                } catch (error) {
+                    alert('An unexpected error occurred. Please try again.');
+                    console.error(error);
+                }
+            });
+        }
+    }
 
     links.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -58,33 +91,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     loadContent('dashboard');
-    accountForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent the default form submission
-
-        // Collect form data
-        const formData = new FormData(accountForm);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            // Send POST request to the server
-            const response = await fetch('/create-account', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
-
-            if (response.ok) {
-                alert('Account created successfully!');
-                accountForm.reset(); // Clear the form after successful submission
-            } else {
-                const errorText = await response.text();
-                alert(`Failed to create account: ${errorText}`);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An unexpected error occurred. Please try again.');
-        }
-    }); // Load the dashboard by default on page load
 });

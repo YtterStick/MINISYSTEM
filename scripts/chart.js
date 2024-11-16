@@ -1,59 +1,54 @@
-// scripts/chart.js
-
-// Function to initialize the dashboard chart
 function initializeDashboardChart() {
     const canvas = document.getElementById('incomeChart');
     
     if (canvas) {
-        const ctx = canvas.getContext('2d'); // Get the 2d context for the canvas
+        const ctx = canvas.getContext('2d');
 
-        // Example data for the chart (can be dynamic based on your backend data)
         const data = {
             labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], // X-axis labels
             datasets: [
                 {
                     label: 'Income',
-                    data: [12000, 15000, 13000, 17000, 14000, 16000, 18000, 19000, 21000, 22000, 25000, 27000], // Data points for Income
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // Color for the Income bars
-                    borderColor: 'rgba(75, 192, 192, 1)', // Border color for the Income bars
+                    data: [12000, 15000, 13000, 17000, 14000, 16000, 18000, 19000, 21000, 22000, 25000, 27000], //Data points for Income
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)', //color for the Income bars
+                    borderColor: 'rgba(75, 192, 192, 1)', //Border color for the Income bars
                     borderWidth: 1
                 },
                 {
                     label: 'Sales',
-                    data: [10000, 12000, 11000, 16000, 13000, 15000, 17000, 16000, 20000, 21000, 24000, 26000], // Data points for Sales
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)', // Color for the Sales bars
-                    borderColor: 'rgba(255, 159, 64, 1)', // Border color for the Sales bars
+                    data: [10000, 12000, 11000, 16000, 13000, 15000, 17000, 16000, 20000, 21000, 24000, 26000],
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
                     borderWidth: 1
                 }
             ]
         };
 
-        // Chart.js options to customize the chart
         const options = {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: true, // Start the y-axis at 0
+                    beginAtZero: true,
                     ticks: {
-                        color: 'white' // Y-axis label color
+                        color: 'white' //Y-axis label color
                     }
                 },
                 x: {
                     ticks: {
-                        color: 'white' // X-axis label color
+                        color: 'white' //X-axis label color
                     }
                 }
             },
             plugins: {
                 legend: {
                     labels: {
-                        color: 'white' // Legend text color
+                        color: 'white' //Legend text color
                     }
                 },
                 tooltip: {
-                    titleColor: 'white', // Tooltip title color
-                    bodyColor: 'white'  // Tooltip text color
+                    titleColor: 'white', //title color
+                    bodyColor: 'white'  // Text color
                 }
             }
         };
@@ -81,7 +76,7 @@ function initializeServiceSalesChart() {
         labels: ['Wash', 'Dry Cleaning', 'Special Service'],
         datasets: [{
             label: 'Sales by Service Type',
-            data: [120000, 50000, 30000], // Example data (in dollars)
+            data: [120000, 50000, 30000],
             backgroundColor: ['rgba(255, 159, 64, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'],
             borderColor: ['rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
             borderWidth: 1

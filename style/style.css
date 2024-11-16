@@ -26,11 +26,12 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: hidden;
   transition: width 0.3s ease;
   padding: 1rem 0;
 }
 .sidebar .brand-logo {
+  gap: 15px;
   display: flex;
   align-items: center;
   padding: 1rem;
@@ -46,7 +47,7 @@ body {
   display: flex;
   align-items: center;
   color: inherit;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 1.5rem;
   text-decoration: none;
   transition: background-color 0.3s;
 }
@@ -60,16 +61,20 @@ body {
 .sidebar .navbar-item .nav-item .submenu {
   display: none;
   padding-left: 2rem;
+  list-style: none;
 }
 .sidebar .navbar-item .nav-item .submenu .nav-link {
-  padding: 0.5rem 0;
-  font-size: 0.9rem;
+  padding: 14px 14px;
+  font-size: 16px;
 }
 .sidebar .navbar-item .nav-item .submenu .nav-link:hover {
-  background-color: #1a252f;
+  background-color: #6359E9;
 }
 .sidebar .navbar-item .nav-item.open > .submenu {
   display: block;
+  font-size: 14px;
+  font-weight: 400;
+  list-style: none;
 }
 .sidebar .navbar-item .nav-item.open .arrow-icon {
   transform: rotate(90deg);
@@ -77,19 +82,19 @@ body {
 
 .strip-line {
   border: none;
-  border-top: 1px solid #3e5871;
-  margin: 1rem 0;
+  border-top: 1px solid #4B4B99;
+  margin-top: 13px;
+  margin-bottom: 13px;
 }
 
 .account,
 .logout {
-  position: absolute;
+  position: relative;
   left: 0;
   width: 100%;
 }
 
 .account {
-  bottom: 60px;
   display: flex;
   align-items: center;
   padding: 10px;
@@ -386,38 +391,39 @@ body {
 #account-management .account-form .form-group .btn-submit:hover {
   background-color: #392ce3;
 }
-#account-management .account-list h3 {
+
+.account-list h3 {
   font-size: 20px;
   margin-bottom: 20px;
 }
-#account-management .account-list table {
+.account-list table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   border-radius: 8px;
   overflow: hidden;
 }
-#account-management .account-list table th, #account-management .account-list table td {
+.account-list table th, .account-list table td {
   padding: 12px;
   border: 1px solid #444;
 }
-#account-management .account-list table th {
+.account-list table th {
   background-color: #1D1D41;
   font-size: 14px;
 }
-#account-management .account-list table td {
+.account-list table td {
   font-size: 14px;
   color: #ddd;
 }
-#account-management .account-list table tr:nth-child(even) {
+.account-list table tr:nth-child(even) {
   background-color: #2a2a61;
 }
-#account-management .account-list table tr:hover {
+.account-list table tr:hover {
   background-color: transparent;
   cursor: default;
   color: inherit;
 }
-#account-management .account-list table .actions button {
+.account-list table .actions button {
   background-color: transparent;
   border: none;
   color: #6359E9;
@@ -425,7 +431,7 @@ body {
   cursor: pointer;
   margin-left: 10px;
 }
-#account-management .account-list table .actions button:hover {
+.account-list table .actions button:hover {
   text-decoration: underline;
   background-color: rgba(99, 89, 233, 0.1);
 }

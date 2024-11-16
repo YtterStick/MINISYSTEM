@@ -1,0 +1,61 @@
+<div class="account-list">
+    <h3>Existing Accounts</h3>
+    <table id="accounts-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Branch</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Example row (dynamic rows will replace this) -->
+            <tr>
+                <td class="user-name">Andrei</td>
+                <td class="user-email">andreidilag12@gmail.com</td>
+                <td class="user-role">Admin</td>
+                <td class="user-branch">Branch 1</td>
+                <td class="actions">
+                    <button class="btn-update" data-id="1">Update</button>
+                    <button class="btn-delete" data-id="1">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div id="update-popup" class="popup">
+    <div class="popup-content">
+        <span class="close-btn" id="close-popup">&times;</span>
+        <h2>Update Account</h2>
+        <form id="update-form">
+            <div class="form-group">
+                <label for="update-username">Username</label>
+                <input type="text" id="update-username" name="username" placeholder="Enter username" required>
+            </div>
+            <div class="form-group">
+                <label for="update-email">Email</label>
+                <input type="email" id="update-email" name="email" placeholder="Enter email" required>
+            </div>
+            <div class="form-group">
+                <label for="update-role">Role</label>
+                <select id="update-role" name="role" required>
+                    <option value="admin">Admin</option>
+                    <option value="branch">Branch Staff</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="update-branch">Assign Branch</label>
+                <select id="update-branch" name="branch">
+                    <option value="1">Branch 1</option>
+                    <option value="2">Branch 2</option>
+                    <option value="3">Branch 3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-submit">Update Account</button>
+            </div>
+        </form>
+    </div>
+</div>  

@@ -30,48 +30,45 @@
                         <img src="/assets/chart.svg" alt="Reports">
                         <span class="text-link">Reports</span>
                     </a>
-                    <ul class="submenu">
-                        <li class="branch-item">
-                            <a href="#" class="branch-link" data-section="branch-1">
-                                Branch 1
-                            </a>
-                        </li>
-                        <li class="branch-item">
-                            <a href="#" class="branch-link" data-section="branch-2">
-                                Branch 2
-                            </a>
-                        </li>
-                    </ul>
                 </li>
 
-                <li class="nav-item branch-management">
-                    <a href="#" class="nav-link">
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="toggleDropdown(event)">
                         <img src="/assets/record.svg" alt="Branch Management">
                         <span class="text-link">Branch Management</span>
                         <i class="fa-solid fa-chevron-right arrow-icon"></i>
                     </a>
                     <ul class="submenu">
                         <li class="branch-item">
-                            <a href="#" class="branch-link" data-section="branch-1">
+                            <a href="#" class="nav-link">
                                 Branch 1
                             </a>
                         </li>
                         <li class="branch-item">
-                            <a href="#" class="branch-link" data-section="branch-2">
+                            <a href="#" class="nav-link"">
                                 Branch 2
                             </a>
                         </li>
-                        
+                        <li class="branch-item">
+                            <a href="#" class="nav-link"">
+                                Branch 2
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
                 <li class="nav-item">
-                    <a href="#" class="nav-link" data-section="manage-account">
-                        <img src="/assets/settings.svg" alt="Manage Account">
+                    <a href="#" class="nav-link" onclick="toggleDropdown(event)">
+                        <img src="/assets/manage.svg" alt="">
                         <span class="text-link">Account Management</span>
+                        <i class="arrow-icon fas fa-chevron-right"></i>
                     </a>
-
+                    <ul class="submenu">
+                        <li><a href="#account-management" class="nav-link" data-section="create-account">Create Account</a></li>
+                        <li><a href="#accounts-table" class="nav-link" data-section="existing-account">Existing Accounts</a></li>
+                    </ul>
                 </li>
+            
             </ul>
 
             <hr class="strip-line">
@@ -110,19 +107,9 @@
         <div class="main-content" id="main-content-id">
             <!-- Dynamic content loaded here -->
         </div>
-
-        <!-- Branch Overlay -->
-        <div class="floating-sidebar" id="floating-sidebar">
-            <div class="close-sidebar">
-                <button id="close-sidebar-btn">&times;</button>
-            </div>
-            <ul id="branch-options-list">
-                <!-- Dynamically populated list will go here -->
-            </ul>
-        </div>
     </div>
-    <script src="/scripts/account.js"></script>
-    <script src="/scripts/content-loader.js"></script>
+    <script src="/scripts/load-account.js"defer></script>
+    <script src="/scripts/content-loader.js"defer></script>
     <script src="/scripts/sidebar.js" defer></script>
     <script src="/scripts/chart.js" defer></script>
 </body>

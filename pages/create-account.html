@@ -1,0 +1,42 @@
+<!-- Account Management Section -->
+<section id="account-management">
+       <div class="page-header">
+           <div class="page-title">
+               <h1>Account Management</h1>
+               <p>Manage user accounts and assign roles.</p>
+           </div>
+       </div>
+    
+       <!-- Form to Create Account -->
+       <div class="account-form">
+           <form id="account-form" method="POST" action="/create-account">
+               <div class="form-group">
+                   <label for="username">Username</label>
+                   <input type="text" id="username" name="username" placeholder="Enter username" required>
+               </div>
+               <div class="form-group">
+                   <label for="role">Role</label>
+                   <select id="role" name="role" required>
+                       <option value="admin">Admin</option>
+                       <option value="branch">Branch Staff</option>
+                   </select>
+               </div>
+               <div class="form-group">
+                   <label for="branch">Assign Branch</label>
+                   <select id="branch" name="branch">
+                       <option value="1">Branch 1</option>
+                       <option value="2">Branch 2</option>
+                       <option value="3">Branch 3</option>
+                   </select>
+               </div>
+               <div class="form-group">
+                   <label for="password">Password</label>
+                   <input type="password" id="password" name="password" placeholder="Enter password" required>
+               </div>
+               <div class="form-group">
+                   <button type="submit" class="btn-submit" >Create Account</button>
+               </div>
+           </form>
+       </div>
+    </section>
+    

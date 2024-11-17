@@ -82,7 +82,51 @@
         </aside>
 
         <div class="main-content" id="main-content-id">
-            <!-- Dynamic content loaded here -->
+            <div class="dashboard-container">
+                <!-- Top Section -->
+                <div class="top-section">
+                    <div class="card">
+                        <h2>Today's Sales Summary</h2>
+                        <p class="highlight">$1,500</p>
+                        <span>Total Sales</span>
+                    </div>
+            
+                    <div class="card">
+                        <h2>Today's Income Tally</h2>
+                        <p class="highlight">$800</p>
+                        <span>Income Received</span>
+                    </div>
+            
+                    <div class="card">
+                        <h2>Today's Pending Orders</h2>
+                        <p class="highlight">15</p>
+                        <span>Pending Orders</span>
+                    </div>
+                </div>
+            
+                <!-- Bottom Section -->
+                <div class="bottom-section">
+                    <div class="card unclaimed-loads-card">
+                        <h2>Unclaimed Loads</h2>
+                        <p class="highlight">Total Unpaid: 2</p>
+                        <div class="unclaimed-loads-list">
+                            <div class="customer-card unpaid">
+                                <h3>John Doe</h3>
+                                <p>$20.00 - 2 Loads</p>
+                            </div>
+                            <div class="customer-card unpaid">
+                                <h3>Michael Lee</h3>
+                                <p>$15.00 - 1 Load</p>
+                            </div>
+                            <div class="customer-card paid">
+                                <h3>Sarah Taylor</h3>
+                                <p>Paid</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
     </div>
     <script src="/staff_scripts/content-loader.js" defer></script>

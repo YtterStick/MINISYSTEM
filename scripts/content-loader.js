@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const parentItem = event.currentTarget.parentElement;
         parentItem.classList.toggle("open");
     }
+
     function loadContent(section) {
         const contentFile = `/pages/${section}.html`;
 
@@ -31,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     initializeDashboardChart();
                 } else if (section === 'create-account') {
                     attachCreateAccountFormHandler();
+                } else if (section === 'existing-account') {
+                    fetchExistingAccounts();
                 }
             })
             .catch(error => {
@@ -48,6 +51,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function fetchExistingAccounts() {
+        const tableBody = document.querySelector("#accounts-table tbody");
+
+        if (!tableBody) return;
+
+        fetch("/api/accounts")
+            .then(response => response.json())
+            .then(accounts => {
+                tableBody.innerHTML = "";
+
+                accounts.forEach(account => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${account.username}</td>
+                        <td>${account.role}</td>
+                        <td>${account.branch || "N/A"}</td>
+                        <td>
+                            <button class="btn-update" data-id="${account.id}">Update</button>
+                            <button class="btn-delete" data-id="${account.id}">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error("Error fetching accounts:", error);
+            });
+    }
+
     function attachCreateAccountFormHandler() {
         const form = document.getElementById('account-form');
 
@@ -55,21 +87,19 @@ document.addEventListener("DOMContentLoaded", () => {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const formData = new FormData(form);
+                const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData.entries());
 
                 try {
                     const response = await fetch('/create-account', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data),
                     });
 
                     if (response.ok) {
                         alert('Account created successfully!');
-                        form.reset(); // Clear the form after submission
+                        e.target.reset();
                     } else {
                         const errorMessage = await response.text();
                         alert(`Failed to create account: ${errorMessage}`);

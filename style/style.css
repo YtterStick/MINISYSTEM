@@ -26,7 +26,7 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease-in-out;
   padding: 1rem 0;
   overflow-y: auto;
 }
@@ -49,14 +49,15 @@ body {
   color: inherit;
   padding: 1rem 1.5rem;
   text-decoration: none;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease-in-out;
 }
 .sidebar .navbar-item .nav-item .nav-link:hover {
   background-color: #6359E9;
+  border-radius: 10px;
 }
 .sidebar .navbar-item .nav-item .nav-link .arrow-icon {
   margin-left: auto;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease-in-out;
 }
 .sidebar .navbar-item .nav-item .nav-link.active {
   background-color: #6359E9;
@@ -86,10 +87,8 @@ body {
 }
 
 .strip-line {
-  border: none;
-  border-top: 1px solid #4B4B99;
-  margin-top: 13px;
-  margin-bottom: 13px;
+  margin: 13px;
+  border: 1px solid #4B4B99;
 }
 
 .account,
@@ -174,10 +173,6 @@ body {
   border: none;
   border-radius: 10px;
   outline: none;
-}
-.main-content .search-button .form-input::-moz-placeholder {
-  color: #aeabd9;
-  font-size: 12px;
 }
 .main-content .search-button .form-input::placeholder {
   color: #aeabd9;
@@ -394,7 +389,7 @@ body {
   transition: background-color 0.3s ease-in-out;
 }
 #account-management .account-form .form-group .btn-submit:hover {
-  background-color: #392ce3;
+  background-color: rgb(56.6808510638, 43.9680851064, 227.0319148936);
 }
 
 .account-list h3 {
@@ -496,4 +491,6 @@ body {
 .popup .popup-content .form-group input:focus, .popup .popup-content .form-group select:focus {
   outline: none;
   border-color: #6359E9;
-}/*# sourceMappingURL=style.css.map */
+}
+
+/*# sourceMappingURL=style.css.map */

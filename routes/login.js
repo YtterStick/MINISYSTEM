@@ -36,7 +36,7 @@ router.post("/", (req, res) => {
 
         if (user.role === "Admin") {
           res.status(200).send("/main/index.html");
-        } else if (user.role === "Branch") {
+        } else if (user.role === "Staff") {
           res.status(200).send("/main/staff.html"); 
         }
       } else {

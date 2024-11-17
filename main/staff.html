@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/style/staff.css">
     <title>Dashboard</title>
 </head>
@@ -31,8 +31,8 @@
                         <i class="fa-solid fa-chevron-right arrow-icon"></i>
                     </a>
                     <ul class="submenu">
-                        <li><a href="#" class="nav-link" data-section="create-account">Create Account</a></li>
-                        <li><a href="#" class="nav-link" data-section="existing-account">Existing Accounts</a></li>
+                        <li><a href="#" class="nav-link" data-section="create-sales-order">Create Sales Order</a></li>
+                        <li><a href="#" class="nav-link" data-section="order-process">Order Processing</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -42,23 +42,24 @@
                         <i class="arrow-icon fas fa-chevron-right"></i>
                     </a>
                     <ul class="submenu">
-                        <li><a href="#" class="nav-link" data-section="create-account">View Sales Record</a></li>
-                        <li><a href="#" class="nav-link" data-section="existing-account">Manage Distribution</a></li>
+                        <li><a href="#" class="nav-link"data-section="view-sales-record">View Sales Record</a></li>
+                        <li><a href="#" class="nav-link"data-section="manage-distribution">Manage Distribution</a></li>
                     </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-section="inventory">
+                        <img src="" alt="">
+                        <span class="text-link">Inventory</span>
+                    </a>
                 </li>
             </ul>
 
             <hr class="strip-line">
 
             <ul class="navbar-item">
+                
                 <li class="nav-item">
-                    <a href="#" class="nav-link" data-section="security">
-                        <img src="" alt="">
-                        <span class="text-link">Activity Log</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link" data-section="log-history">
+                    <a href="#" class="nav-link" data-section="profile Settings ">
                         <img src="" alt="">
                         <span class="text-link">Profile Settings</span>
                     </a>
@@ -70,7 +71,7 @@
                     <img src="/assets/avatar.svg" alt="User Avatar" class="img-avatar">
                     <div class="name-account">
                         <h1>Andrei Dilag</h1>
-                        <p>Admin</p>
+                        <p>Staff</p>
                     </div>
                 </div>
             </div>
@@ -79,11 +80,12 @@
                 <span class="btn-logout">Logout</span>
             </div>
         </aside>
-        
+
         <div class="main-content" id="main-content-id">
             <!-- Dynamic content loaded here -->
         </div>
     </div>
+    <script src="/staff_scripts/content-loader.js" defer></script>
 </body>
 
 </html>

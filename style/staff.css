@@ -39,4 +39,61 @@ html, body {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+.sidebar .navbar-item .nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  padding: 1rem 1.5rem;
+  transition: 0.3s ease-in-out;
+}
+.sidebar .navbar-item .nav-item .nav-link:hover {
+  background-color: #6359E9;
+  border-radius: 10px;
+}
+.sidebar .navbar-item .nav-item .nav-link .arrow-icon {
+  margin-left: auto;
+  transition: transform 0.3s ease-in-out;
+}
+.sidebar .navbar-item .nav-item .nav-link.active {
+  background-color: #6359E9;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.sidebar .navbar-item .nav-item .submenu {
+  display: none;
+  padding-left: 2rem;
+  list-style: none;
+}
+.sidebar .navbar-item .nav-item .submenu .nav-link {
+  padding: 14px 14px;
+  font-size: 16px;
+}
+.sidebar .navbar-item .nav-item .submenu .nav-link:hover {
+  background-color: #6359E9;
+}
+.sidebar .navbar-item .nav-item.open > .submenu {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  list-style: none;
+}
+.sidebar .navbar-item .nav-item.open .arrow-icon {
+  transform: rotate(90deg);
+}
+
+.strip-line {
+  margin: 13px;
+  border: 1px solid #4B4B99;
+}
+
+.account,
+.logout {
+  position: relative;
+  left: 0;
+}
+
+.account {
+  margin-top: 7.7rem;
 }/*# sourceMappingURL=staff.css.map */

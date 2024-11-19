@@ -19,7 +19,7 @@ router.post("/", (req, res) => {
         "Special Service": 200,
     };
 
-    // Calculate total cost
+    //Calculate total cost
     const baseCost = services
         .split(", ")
         .reduce((sum, service) => sum + serviceCosts[service], 0);
@@ -48,6 +48,7 @@ router.post("/", (req, res) => {
             additionalFees,
             totalCost,
             paymentStatus,
+            monthCreated,
         ],
         (err, result) => {
             if (err) {
@@ -71,6 +72,7 @@ router.post("/", (req, res) => {
         }
     );
 });
+
 router.get("/unpaid", (req, res) => {
     const query = `
         SELECT id, customer_name, services, number_of_loads, total_cost, month_created
@@ -89,4 +91,22 @@ router.get("/unpaid", (req, res) => {
     });
 });
 
+// Mark order as paid
+router.put("/mark-paid/:id", (req, res) => {
+    const { id } = req.params;
+    const db = req.app.get("db");
+    const query = `UPDATE sales_orders SET payment_status = 'Paid' WHERE id = ?`;
+
+    db.query(query, [id], (err) => {
+        if (err) {
+            console.error("Error marking order as paid:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to mark order as paid.",
+            });
+        }
+
+        res.status(200).json({ success: true, message: "Order marked as paid." });
+    });
+});
 module.exports = router;

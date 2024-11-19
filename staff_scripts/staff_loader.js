@@ -24,7 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(data => {
                 mainContent.innerHTML = data;
                 setActiveLink(section);
-
+                if(section === "create-sales-order"){
+                    initializeCreateSalesOrder();
+                }
             
             })
             .catch(error => {
@@ -48,5 +50,30 @@ document.addEventListener("DOMContentLoaded", () => {
             if (section) loadContent(section);
         });
     });
+
+    function initializeCreateSalesOrder() {
+        const form = document.getElementById("sales-order-form");
+    
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+    
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+    
+            fetch("/api/sales-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+                .then((res) => res.json())
+                .then((result) => alert(result.message))
+                .catch((err) => console.error(err));
+        });
+    
+        document.getElementById("save-transaction").addEventListener("click", () => {
+            alert("Transaction saved as unpaid.");
+        });
+    }
+    
     loadContent('dashboard');
 });

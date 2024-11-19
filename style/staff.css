@@ -29,7 +29,6 @@ body {
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease-in-out;
-  padding: 1rem 0;
   overflow-y: auto;
 }
 .sidebar .brand-logo {
@@ -147,4 +146,74 @@ body {
   margin-left: 300px;
   padding: 20px;
   width: 100%;
-}/*# sourceMappingURL=staff.css.map */
+}
+.main-content .create-sales-order {
+  background-color: #1D1D41;
+  padding: 20px;
+  border-radius: 10px;
+  color: #FFFFFF;
+  width: 80%;
+  margin: 20px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.main-content .create-sales-order h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 24px;
+}
+.main-content .create-sales-order .form-group {
+  margin-bottom: 15px;
+}
+.main-content .create-sales-order .form-group label {
+  display: block;
+  font-size: 14px;
+  color: white;
+  margin-bottom: 5px;
+}
+.main-content .create-sales-order .form-group input,
+.main-content .create-sales-order .form-group select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #4B4B99;
+  background-color: #141332;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+.main-content .create-sales-order .form-group input:focus,
+.main-content .create-sales-order .form-group select:focus {
+  outline: none;
+  border-color: #6359E9;
+  background-color: rgb(12.6086956522, 11.9782608696, 31.5217391304);
+}
+.main-content .create-sales-order .form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.main-content .create-sales-order .form-actions .btn {
+  padding: 10px 15px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease-in-out;
+}
+.main-content .create-sales-order .form-actions .btn.btn-primary {
+  background-color: #6359E9;
+  color: #FFFFFF;
+  border: none;
+}
+.main-content .create-sales-order .form-actions .btn.btn-primary:hover {
+  background-color: rgb(56.6808510638, 43.9680851064, 227.0319148936);
+}
+.main-content .create-sales-order .form-actions .btn.btn-secondary {
+  background-color: #4B4B99;
+  color: #FFFFFF;
+  border: none;
+}
+.main-content .create-sales-order .form-actions .btn.btn-secondary:hover {
+  background-color: rgb(99.9868421053, 99.9868421053, 179.0131578947);
+}
+
+/*# sourceMappingURL=staff.css.map */

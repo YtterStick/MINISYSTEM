@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const session = require('express-session');
 const path = require('path');
+const exp = require('constants');
 
 const app = express();
 const PORT = 3000;
@@ -14,6 +15,8 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
 app.use('/pages', express.static(path.join(__dirname, 'pages')));
 app.use('/main', express.static(path.join(__dirname, 'main')));
+app.use('/staff_pages', express.static(path.join(__dirname, 'staff_pages')));
+app.use('/staff_scripts', express.static(path.join(__dirname, 'staff_scripts')));
 
 app.use(
     session({

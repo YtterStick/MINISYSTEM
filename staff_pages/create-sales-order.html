@@ -1,48 +1,62 @@
 <div class="create-sales-order">
     <h2>Create Sales Order</h2>
     <form id="sales-order-form">
-      <div class="form-group">
-        <label for="customer-name">Customer Name</label>
-        <input type="text" id="customer-name" name="customerName" placeholder="Enter customer name" required>
-      </div>
-  
-      <div class="form-group">
-        <label for="number-of-loads">Number of Loads</label>
-        <input type="number" id="number-of-loads" name="numberOfLoads" min="1" placeholder="Enter number of loads" required>
-      </div>
-  
-      <div class="form-group">
-        <label for="services">Select Service</label>
-        <select id="services" name="services" required>
-          <option value="Wash">Wash</option>
-          <option value="Dry">Dry</option>
-          <option value="Wash & Dry">Wash & Dry</option>
-          <option value="Special Service">Special Service</option>
-        </select>
-      </div>
-  
-      <div class="form-group">
-        <label for="detergent-count">Number of Detergent Packs</label>
-        <input type="number" id="detergent-count" name="detergentCount" min="0" placeholder="Enter detergent packs">
-      </div>
-  
-      <div class="form-group">
-        <label for="fabric-softener-count">Number of Fabric Softener Packs</label>
-        <input type="number" id="fabric-softener-count" name="fabricSoftenerCount" min="0" placeholder="Enter softener packs">
-      </div>
-  
-      <div class="form-group">
-        <label for="payment-status">Payment Status</label>
-        <select id="payment-status" name="paymentStatus" required>
-          <option value="Paid">Paid</option>
-          <option value="Unpaid">Unpaid</option>
-        </select>
-      </div>
-  
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Generate Receipt</button>
-        <button type="button" id="save-transaction" class="btn btn-secondary">Save Transaction</button>
-      </div>
+        <div class="form-group">
+            <label for="customer-name">Customer Name</label>
+            <input type="text" id="customer-name" name="customerName" required>
+        </div>
+
+        <div class="form-group">
+            <label for="number-of-loads">Number of Loads</label>
+            <input type="number" id="number-of-loads" name="numberOfLoads" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="services">Select Service</label>
+            <select id="services" name="services" required>
+                <option value="Wash">Wash</option>
+                <option value="Dry">Dry</option>
+                <option value="Wash & Dry">Wash & Dry</option>
+                <option value="Special Service">Special Service</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="detergent-count">Number of Detergent Packs</label>
+            <input type="number" id="detergent-count" name="detergentCount" min="0">
+        </div>
+
+        <div class="form-group">
+            <label for="fabric-softener-count">Number of Fabric Softener Packs</label>
+            <input type="number" id="fabric-softener-count" name="fabricSoftenerCount" min="0">
+        </div>
+
+        <div class="form-group">
+            <label for="payment-status">Payment Status</label>
+            <select id="payment-status" name="paymentStatus" required>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" id="generate-receipt" class="btn btn-primary">Generate Receipt</button>
+            <button type="button" id="save-transaction" class="btn btn-secondary">Save Transaction</button>
+        </div>
     </form>
-  </div>
-  
+</div>
+
+<!-- Receipt Modal -->
+<div id="receipt-modal" class="modal">
+    <div class="modal-content">
+        <h3>Receipt</h3>
+        <img src="/assets/logo.svg" alt="Starwash Logo" width="80">
+        <p id="receipt-date"></p>
+        <p id="receipt-services"></p>
+        <p id="receipt-total"></p>
+        <div class="modal-actions">
+            <button id="print-receipt" class="btn btn-primary">Print</button>
+            <button id="cancel-receipt" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>

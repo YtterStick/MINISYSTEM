@@ -23,6 +23,7 @@ app.use(
         secret: 'secret-key',
         resave: false,
         saveUninitialized: true,
+        cookie: {secure:false},
     })
 );
 
@@ -40,12 +41,17 @@ db.connect(err => {
 
 app.set('db', db);
 
+
+app.use("/api/users", require("./routes/users"));
+app.use("/api/accounts", require("./routes/accounts"));;
+app.use("/api/sales-order", require("./routes/sales-order"));
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'main', 'login.html'));
 });
-app.use("/api/accounts", require("./routes/accounts"));
-app.use('/create-account', require('./routes/createAccount'));
-app.use('/login', require('./routes/login'));
+app.get("/debug-session", (req, res) => {
+    res.json(req.session); // Returns the current session data
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

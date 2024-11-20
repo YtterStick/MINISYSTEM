@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const isAuthenticated = require("../middleware/auth"); 
 
-router.post("/", (req, res) => {
+router.post("/",isAuthenticated , (req, res) => {
     const {
         userId,
         customerName,
@@ -12,6 +13,13 @@ router.post("/", (req, res) => {
         paymentStatus,
     } = req.body;
 
+
+    if (!userId) {
+        return res.status(400).json({ success: false, message: "User not authenticated" });
+    }
+
+    // Log the received data
+    console.log("Request Body:", req.body);
     const serviceCosts = {
         Wash: 95,
         Dry: 65,
@@ -31,10 +39,24 @@ router.post("/", (req, res) => {
     const totalCost =
         loadCost + detergentCost + fabricSoftenerCost + additionalFees;
 
+
+    const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
+
+    console.log("Request Body:", req.body);
+    console.log("Calculated Values:", {
+        loadCost,
+        detergentCost,
+        fabricSoftenerCost,
+        additionalFees,
+        totalCost,
+        monthCreated,
+    });
+
+    const db = req.app.get("db");
     //Save the transaction
     const query = `
-        INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, month_created)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.query(
         query,
@@ -52,12 +74,13 @@ router.post("/", (req, res) => {
         ],
         (err, result) => {
             if (err) {
-                console.error("Error saving sales order:", err);
+                console.error("Error saving sales order:", err); // Log SQL errors
                 return res
                     .status(500)
                     .json({ success: false, message: "Failed to save order." });
             }
 
+            console.log("Transaction Result:", result);
             if (paymentStatus === "Paid") {
                 res.status(200).json({
                     success: true,
@@ -73,7 +96,7 @@ router.post("/", (req, res) => {
     );
 });
 
-router.get("/unpaid", (req, res) => {
+router.get("/unpaid", isAuthenticated, (req, res) => {
     const query = `
         SELECT id, customer_name, services, number_of_loads, total_cost, month_created
         FROM sales_orders WHERE payment_status = 'Unpaid'`;

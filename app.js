@@ -45,6 +45,8 @@ app.set('db', db);
 app.use("/api/users", require("./routes/users"));
 app.use("/api/accounts", require("./routes/accounts"));;
 app.use("/api/sales-order", require("./routes/sales-order"));
+app.use("/receipts", express.static(path.join(__dirname, "receipts")));
+
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'main', 'login.html'));

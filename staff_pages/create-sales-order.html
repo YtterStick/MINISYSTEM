@@ -3,12 +3,12 @@
     <form id="sales-order-form">
         <div class="form-group">
             <label for="customer-name">Customer Name</label>
-            <input type="text" id="customer-name" name="customerName" required>
+            <input placeholder="Enter Customer Name" type="text" id="customer-name" name="customerName" required>
         </div>
 
         <div class="form-group">
-            <label for="number-of-loads">Number of Loads</label>
-            <input type="number" id="number-of-loads" name="numberOfLoads" min="1" required>
+            <label for="number-of-loads">Loads</label>
+            <input placeholder="Number of Loads" type="number" id="number-of-loads" name="numberOfLoads" min="1" required>
         </div>
 
         <div class="form-group">
@@ -22,13 +22,13 @@
         </div>
 
         <div class="form-group">
-            <label for="detergent-count">Number of Detergent Packs</label>
-            <input type="number" id="detergent-count" name="detergentCount" min="0">
+            <label for="detergent-count">Detergent Packs</label>
+            <input placeholder="Number of Detergent" type="number" id="detergent-count" name="detergentCount" min="0">
         </div>
 
         <div class="form-group">
-            <label for="fabric-softener-count">Number of Fabric Softener Packs</label>
-            <input type="number" id="fabric-softener-count" name="fabricSoftenerCount" min="0">
+            <label for="fabric-softener-count">Softener Packs</label>
+            <input placeholder="Number of Softener" type="number" id="fabric-softener-count" name="fabricSoftenerCount" min="0">
         </div>
 
         <div class="form-group">
@@ -37,26 +37,9 @@
                 <option value="Paid">Paid</option>
                 <option value="Unpaid">Unpaid</option>
             </select>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" id="generate-receipt" class="btn btn-primary">Generate Receipt</button>
-            <button type="button" id="save-transaction" class="btn btn-secondary">Save Transaction</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-process">Process Transaction</button>
+            </div>
         </div>
     </form>
-</div>
-
-<!-- Receipt Modal -->
-<div id="receipt-modal" class="modal">
-    <div class="modal-content">
-        <h3>Receipt</h3>
-        <img src="/assets/logo.svg" alt="Starwash Logo" width="80">
-        <p id="receipt-date"></p>
-        <p id="receipt-services"></p>
-        <p id="receipt-total"></p>
-        <div class="modal-actions">
-            <button id="print-receipt" class="btn btn-primary">Print</button>
-            <button id="cancel-receipt" class="btn btn-secondary">Cancel</button>
-        </div>
-    </div>
 </div>

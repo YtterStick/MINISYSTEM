@@ -1,0 +1,28 @@
+<div class="manage-distribution-container">
+    <h2>Manage Distribution</h2>
+
+    <div class="filters">
+        <label for="date-filter">Choose Date:</label>
+        <input type="date" id="date-filter">
+        
+        <input
+            type="text"
+            id="search-bar"
+            placeholder="Search by customer name"
+        />
+    </div>
+
+    <table class="distribution-table">
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Number of Loads</th>
+                <th>Date & Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="distribution-orders-body">
+            <!-- Paid and unclaimed transactions will be dynamically loaded here -->
+        </tbody>
+    </table>
+</div>

@@ -36,7 +36,7 @@
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link" onclick="toggleDropdown(event)">
+                    <a href="#" onclick="toggleDropdown(event)" class="nav-link">
                         <img src="" alt="">
                         <span class="text-link">Sales Record</span>
                         <i class="arrow-icon fas fa-chevron-right"></i>
@@ -85,6 +85,16 @@
             <!-- Dynamic content loaded here -->
         </div>
     </div>
+    <div id="print-popup" class="popup">
+        <div class="popup-content">
+            <!-- Add Close Button -->
+            <button id="close-popup" class="popup-close-button">&times;</button>
+            <iframe id="receipt-iframe" class="receipt-iframe" frameborder="0"></iframe>
+            <button id="print-button" class="popup-print-button">Print</button>
+        </div>
+    </div>
+    
+    
     <script src="/staff_scripts/staff_loader.js"></script>
 </body>
 

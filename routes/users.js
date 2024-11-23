@@ -2,25 +2,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const router = express.Router();
 
-// Create User
-router.post("/create", async (req, res) => {
-    const { username, password, role, branch } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const db = req.app.get("db");
-
-    const query = `
-        INSERT INTO users (username, password, role, branch)
-        VALUES (?, ?, ?, ?)`;
-
-    db.query(query, [username, hashedPassword, role, branch], (err) => {
-        if (err) {
-            console.error("Error creating user:", err);
-            return res.status(500).send("Failed to create user.");
-        }
-        res.status(200).send("User created successfully.");
-    });
-});
-
 // User Login
 router.post("/login", (req, res) => {
     const { username, password } = req.body;

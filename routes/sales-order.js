@@ -2,208 +2,145 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { PDFDocument, rgb, StandardFonts } = require("pdf-lib"); // Import pdf-lib directly
-
 const isAuthenticated = require("../middleware/auth");
 
 const router = express.Router();
 
+// Global pricing configuration
+const PRICING = {
+    services: {
+        Wash: 95,
+        Dry: 65,
+        "Wash & Dry": 130,
+        "Special Service": 200,
+    },
+    detergentCost: 17,
+    fabricSoftenerCost: 13,
+    plasticFee: 3.0,
+};
+
 // Process sales order (save or generate receipt)
 router.post("/process", isAuthenticated, async (req, res) => {
-    const {
-        userId,
-        customerName,
-        numberOfLoads,
-        services,
-        detergentCount,
-        fabricSoftenerCount,
-        paymentStatus,
-    } = req.body;
-
-    const serviceCosts = {
-        Wash: 50,
-        Dry: 40,
-        "Wash & Dry": 80,
-        "Special Service": 100,
-    };
-
-    const baseCost = serviceCosts[services] || 0;
-    const additionalFees = 3.0; // Plastic fee
-    const totalCost =
-        numberOfLoads * baseCost +
-        (detergentCount || 0) * 10 +
-        (fabricSoftenerCount || 0) * 15 +
-        additionalFees;
-
-    const db = req.app.get("db");
-
-    const query = `
-        INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, month_created)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
-
-    db.query(
-        query,
-        [
+    try {
+        const {
             userId,
             customerName,
             numberOfLoads,
             services,
-            detergentCount || 0,
-            fabricSoftenerCount || 0,
-            additionalFees,
-            totalCost,
+            detergentCount,
+            fabricSoftenerCount,
             paymentStatus,
-            monthCreated,
-        ],
-        async (err, result) => {
-            if (err) {
-                console.error("Error processing transaction:", err);
-                return res.status(500).json({ success: false, message: "Failed to process transaction." });
-            }
+        } = req.body;
 
-            // If paid, generate the receipt
-            if (paymentStatus === "Paid") {
-                try {
-                    const pdf = await generateReceiptPDF({
-                        customerName,
-                        services,
-                        numberOfLoads,
-                        detergentCount,
-                        fabricSoftenerCount,
-                        additionalFees,
-                        totalCost,
-                    });
+        console.log("Received request data:", req.body); // Debugging log
 
-                    const receiptFileName = `receipt_${result.insertId}.pdf`; // Use the insertId from the result
-                    const filePath = path.join(__dirname, "../receipts", receiptFileName); // Ensure correct file path
+        const baseCost = PRICING.services[services] || 0;
+        const totalCost =
+            numberOfLoads * baseCost +
+            (detergentCount || 0) * PRICING.detergentCost +
+            (fabricSoftenerCount || 0) * PRICING.fabricSoftenerCost +
+            PRICING.plasticFee;
 
-                    // Save the PDF
-                    fs.writeFileSync(filePath, pdf);
+        const db = req.app.get("db");
 
-                    res.status(200).json({
-                        success: true,
-                        message: "Transaction processed successfully.",
-                        receipt: `/receipts/${receiptFileName}`, // Serve it via the /receipts path
-                    });
-                } catch (err) {
-                    console.error("Error generating receipt:", err);
-                    return res.status(500).json({ success: false, message: "Failed to generate receipt." });
+        const query = `
+            INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, month_created)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
+
+        db.query(
+            query,
+            [
+                userId,
+                customerName,
+                numberOfLoads,
+                services,
+                detergentCount || 0,
+                fabricSoftenerCount || 0,
+                PRICING.plasticFee,
+                totalCost,
+                paymentStatus,
+                monthCreated,
+            ],
+            async (err, result) => {
+                if (err) {
+                    console.error("Error processing transaction:", err);
+                    return res.status(500).json({ success: false, message: "Failed to process transaction." });
                 }
-            } else {
-                res.status(200).json({ success: true, message: "Transaction saved as unpaid." });
+
+                // If paid, generate the receipt
+                if (paymentStatus === "Paid") {
+                    try {
+                        const pdf = await generateReceiptPDF({
+                            customerName,
+                            services,
+                            numberOfLoads,
+                            detergentCount,
+                            fabricSoftenerCount,
+                            additionalFees: PRICING.plasticFee,
+                            totalCost,
+                        });
+
+                        const receiptFileName = `receipt_${result.insertId || Date.now()}.pdf`;
+                        const filePath = path.join(__dirname, "../receipts", receiptFileName);
+
+                        fs.writeFileSync(filePath, pdf);
+
+                        console.log("Receipt generated:", filePath); // Debugging log
+
+                        res.status(200).json({
+                            success: true,
+                            message: "Transaction processed successfully.",
+                            receipt: `/receipts/${receiptFileName}`,
+                        });
+                    } catch (err) {
+                        console.error("Error generating receipt:", err);
+                        return res.status(500).json({ success: false, message: "Failed to generate receipt." });
+                    }
+                } else {
+                    res.status(200).json({ success: true, message: "Transaction saved as unpaid." });
+                }
             }
+        );
+    } catch (err) {
+        console.error("Error in processing request:", err);
+        res.status(500).json({ success: false, message: "Internal server error." });
+    }
+});
+// Fetch paid transactions with filters
+// Route to get paid transactions excluding claimed ones
+router.get("/paid", isAuthenticated, (req, res) => {
+    const { date, name } = req.query; // Date and name from query params
+    const db = req.app.get("db");
+
+    let query = `
+        SELECT * FROM sales_orders 
+        WHERE payment_status = 'Paid' 
+        AND claimed_status != 'Claimed'`;  // Exclude claimed orders
+
+    if (date) {
+        query += ` AND DATE(created_at) = ?`;
+    }
+
+    if (name) {
+        query += ` AND customer_name LIKE ?`;
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    db.query(query, [date, `%${name}%`], (err, result) => {
+        if (err) {
+            console.error("Error fetching paid transactions:", err);
+            return res.status(500).json({ success: false, message: "Failed to fetch paid transactions." });
         }
-    );
+
+        res.status(200).json({ success: true, transactions: result });
+    });
 });
 
-// Helper Function: Generate Receipt as PDF
-async function generateReceiptPDF(data) {
-    const pdfDoc = await PDFDocument.create();
 
-    // Use the built-in Times-Roman font
-    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman); // Use Times-Roman instead of Helvetica
-
-    const page = pdfDoc.addPage([400, 600]);
-    const { customerName, services, numberOfLoads, detergentCount, fabricSoftenerCount, additionalFees, totalCost } = data;
-
-    const serviceCosts = {
-        Wash: 50,
-        Dry: 40,
-        "Wash & Dry": 80,
-        "Special Service": 100,
-    };
-
-    const baseCost = serviceCosts[services] || 0;
-    const detergentAmount = (detergentCount || 0) * 10;
-    const fabricSoftenerAmount = (fabricSoftenerCount || 0) * 15;
-
-    // Ensure totalCost is treated as a number
-    const totalAmount = parseFloat(totalCost) || 0; // Ensure it's a valid number
-
-    // Ensure additionalFees is treated as a number
-    const plasticFee = parseFloat(additionalFees) || 0; // Default to 0 if NaN
-
-    // Get current date and time
-    const currentDate = new Date();
-    const formattedDate = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
-
-    // Draw the header
-    page.drawText("STARWASH RECEIPT", {
-        x: 150,
-        y: 550,
-        size: 16,
-        font: timesRomanFont,
-        color: rgb(0, 0, 0)
-    });
-
-    // Customer info
-    page.drawText(`Customer Name: ${customerName}`, {
-        x: 50,
-        y: 500,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    // Service info
-    page.drawText(`Service: ${services}`, {
-        x: 50,
-        y: 480,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    // Breakdown of costs
-    page.drawText(`Loads (${numberOfLoads} loads): PHP ${baseCost * numberOfLoads}`, {
-        x: 50,
-        y: 460,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    page.drawText(`Detergent: PHP ${detergentAmount}`, {
-        x: 50,
-        y: 440,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    page.drawText(`Fabric Softener: PHP ${fabricSoftenerAmount}`, {
-        x: 50,
-        y: 420,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    page.drawText(`Plastic Fee: PHP ${plasticFee.toFixed(2)}`, {
-        x: 50,
-        y: 400,
-        size: 12,
-        font: timesRomanFont,
-    });
-
-    // Total cost
-    page.drawText(`Total Amount: PHP ${totalAmount.toFixed(2)}`, { // Ensure to use .toFixed() on a valid number
-        x: 50,
-        y: 380,
-        size: 14,
-        font: timesRomanFont,
-        color: rgb(1, 0, 0)
-    });
-
-    // Date and time of the transaction
-    page.drawText(`Date: ${formattedDate}`, {
-        x: 50,
-        y: 360,
-        size: 10,
-        font: timesRomanFont,
-    });
-
-    return await pdfDoc.save();
-}
-
-
-// Route to fetch all unpaid transactions
+// Sales Order API Route to get unpaid transactions
 router.get("/unpaid", isAuthenticated, (req, res) => {
     const db = req.app.get("db");
 
@@ -214,7 +151,7 @@ router.get("/unpaid", isAuthenticated, (req, res) => {
     `;
 
     db.query(query, (err, result) => {
-        if (err) {
+        if (err) {  
             console.error("Error fetching unpaid transactions:", err);
             return res.status(500).json({ success: false, message: "Failed to fetch unpaid transactions." });
         }
@@ -223,31 +160,33 @@ router.get("/unpaid", isAuthenticated, (req, res) => {
     });
 });
 
-// Route to mark a transaction as paid
+// Route to mark a transaction as paid and generate a receipt
 router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
-    // Update the payment status to "Paid"
+    console.log("Marking order as paid. Order ID:", orderId); // Debugging log
+
     const query = `
         UPDATE sales_orders
-        SET payment_status = 'Paid'
-        WHERE id = ?
+        SET claimed_status = 'Claimed'
+        WHERE id = ? AND payment_status = 'Paid'
     `;
 
     db.query(query, [orderId], async (err, result) => {
         if (err) {
-            console.error("Error updating payment status:", err);
+            console.error("Error updating payment status:", err); // Log error
             return res.status(500).json({ success: false, message: "Failed to update payment status." });
         }
 
-        // After updating the status, generate the receipt
+        console.log("Payment status updated. Generating receipt..."); // Debugging log
+
         const orderQuery = `
             SELECT * FROM sales_orders WHERE id = ?
         `;
         db.query(orderQuery, [orderId], async (err, order) => {
             if (err) {
-                console.error("Error fetching order details:", err);
+                console.error("Error fetching order details:", err); // Log error
                 return res.status(500).json({ success: false, message: "Failed to fetch order details." });
             }
 
@@ -259,28 +198,89 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
                     numberOfLoads: orderData.number_of_loads,
                     detergentCount: orderData.detergent_count,
                     fabricSoftenerCount: orderData.fabric_softener_count,
-                    additionalFees: orderData.additional_fees,
-                    totalCost: orderData.total_cost,
+                    additionalFees: Number(orderData.additional_fees), // Ensure numeric value
+                    totalCost: Number(orderData.total_cost), // Ensure numeric value
                 });
 
                 const receiptFileName = `receipt_${orderId}.pdf`;
                 const filePath = path.join(__dirname, "../receipts", receiptFileName);
 
-                // Save the generated PDF
                 fs.writeFileSync(filePath, pdf);
 
-                // Respond with the PDF path
+                console.log("Receipt generated:", filePath); // Debugging log
+
                 res.status(200).json({
                     success: true,
                     message: "Transaction marked as paid and receipt generated.",
                     receipt: `/receipts/${receiptFileName}`,
                 });
             } catch (err) {
-                console.error("Error generating receipt:", err);
+                console.error("Error generating receipt:", err); // Log error
                 return res.status(500).json({ success: false, message: "Failed to generate receipt." });
             }
         });
     });
 });
+// Route to mark an order as claimed
+router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
+    const { orderId } = req.params;
+    const db = req.app.get("db");
+
+    // Update the claimed status to "Claimed"
+    const query = `
+        UPDATE sales_orders
+        SET claimed_status = 'Claimed'
+        WHERE id = ?
+    `;
+
+    db.query(query, [orderId], (err, result) => {
+        if (err) {
+            console.error("Error marking order as claimed:", err);
+            return res.status(500).json({ success: false, message: "Failed to mark order as claimed." });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Order marked as claimed."
+        });
+    });
+});
+
+
+// Helper Function: Generate Receipt as PDF
+async function generateReceiptPDF(data) {
+    const pdfDoc = await PDFDocument.create();
+    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+
+    const page = pdfDoc.addPage([400, 600]);
+    const { customerName, services, numberOfLoads, detergentCount, fabricSoftenerCount, additionalFees, totalCost } = data;
+
+    // Explicitly convert additionalFees to a number
+    const additionalFeesNumeric = Number(additionalFees) || PRICING.plasticFee;
+
+    const detergentAmount = (detergentCount || 0) * PRICING.detergentCost;
+    const fabricSoftenerAmount = (fabricSoftenerCount || 0) * PRICING.fabricSoftenerCost;
+
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
+
+    page.drawText("STARWASH RECEIPT", { x: 150, y: 550, size: 16, font: timesRomanFont, color: rgb(0, 0, 0) });
+    page.drawText(`Customer Name: ${customerName}`, { x: 50, y: 500, size: 12, font: timesRomanFont });
+    page.drawText(`Service: ${services}`, { x: 50, y: 480, size: 12, font: timesRomanFont });
+    page.drawText(`Loads (${numberOfLoads} loads): PHP ${numberOfLoads * PRICING.services[services]}`, {
+        x: 50,
+        y: 460,
+        size: 12,
+        font: timesRomanFont,
+    });
+    page.drawText(`Detergent: PHP ${detergentAmount}`, { x: 50, y: 440, size: 12, font: timesRomanFont });
+    page.drawText(`Fabric Softener: PHP ${fabricSoftenerAmount}`, { x: 50, y: 420, size: 12, font: timesRomanFont });
+    page.drawText(`Plastic Fee: PHP ${additionalFeesNumeric.toFixed(2)}`, { x: 50, y: 400, size: 12, font: timesRomanFont });
+    page.drawText(`Total Amount: PHP ${totalCost.toFixed(2)}`, { x: 50, y: 380, size: 14, font: timesRomanFont, color: rgb(1, 0, 0) });
+    page.drawText(`Date: ${formattedDate}`, { x: 50, y: 360, size: 10, font: timesRomanFont });
+
+    return await pdfDoc.save();
+}
+
 
 module.exports = router;

@@ -456,4 +456,114 @@ body {
   background-color: green;
 }
 
+.view-sales-record-container {
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 1200px;
+  background-color: #1D1D41;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.view-sales-record-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #6359E9;
+}
+.view-sales-record-container .filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.view-sales-record-container .filters label {
+  font-size: 14px;
+  margin-right: 10px;
+}
+.view-sales-record-container .filters input, .view-sales-record-container .filters select {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background-color: #141332;
+  color: #FFFFFF;
+}
+.view-sales-record-container .filters input:focus, .view-sales-record-container .filters select:focus {
+  outline: none;
+  border-color: #6359E9;
+}
+.view-sales-record-container .filters #search-bar {
+  width: 300px;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #4B4B99;
+  background-color: #141332;
+  color: #FFFFFF;
+}
+.view-sales-record-container .filters #search-bar::placeholder {
+  color: #888;
+}
+.view-sales-record-container .sales-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #141332;
+}
+.view-sales-record-container .sales-record-table th, .view-sales-record-container .sales-record-table td {
+  padding: 10px;
+  text-align: left;
+}
+.view-sales-record-container .sales-record-table th {
+  background-color: #4B4B99;
+  font-size: 14px;
+}
+.view-sales-record-container .sales-record-table td {
+  background-color: #1D1D41;
+  font-size: 14px;
+  border-bottom: 1px solid #444;
+}
+.view-sales-record-container .sales-record-table tr:hover {
+  background-color: #6359E9;
+  color: #FFFFFF;
+}
+.view-sales-record-container .sales-record-table .paid {
+  color: #64ff64;
+  font-weight: bold;
+}
+.view-sales-record-container .sales-record-table .unpaid {
+  color: #ff5c5c;
+  font-weight: bold;
+}
+.view-sales-record-container .sales-record-table .claimed {
+  color: #00c4cc;
+}
+.view-sales-record-container .sales-record-table .unclaimed {
+  color: #4B4B99;
+}
+.view-sales-record-container .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+.view-sales-record-container .pagination button {
+  background-color: #1e2a38;
+  border: 1px solid #4B4B99;
+  color: #FFFFFF;
+  padding: 5px 10px;
+  margin: 0 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+}
+.view-sales-record-container .pagination button:hover {
+  background-color: #6359E9;
+  border-color: #6359E9;
+}
+.view-sales-record-container .pagination button.active {
+  background-color: #6359E9;
+  font-weight: bold;
+}
+
 /*# sourceMappingURL=staff.css.map */

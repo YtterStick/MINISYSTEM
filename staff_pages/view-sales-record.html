@@ -1,0 +1,29 @@
+<div class="view-sales-record-container">
+    <h2>View Sales Records</h2>
+
+    <div class="filters">
+        <label for="date-filter">Choose Date:</label>
+        <input type="date" id="date-filter" />
+        
+        <input type="text" id="search-bar" placeholder="Search by customer name" />
+    </div>
+
+    <table class="sales-record-table">
+        <thead>
+            <tr>
+                <th>Customer Name</th>
+                <th>Number of Loads</th>
+                <th>Service</th>
+                <th>Detergent</th>
+                <th>Fabric Softener</th>
+                <th>Total Cost</th>
+                <th>Status</th>
+                <th>Claimed</th>
+                <th>Date & Time</th>
+            </tr>
+        </thead>
+        <tbody id="sales-record-body">
+            <!-- Sales records will be dynamically loaded here -->
+        </tbody>
+    </table>
+</div>

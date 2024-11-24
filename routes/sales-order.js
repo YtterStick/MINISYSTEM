@@ -167,10 +167,11 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
 
     console.log("Marking order as paid. Order ID:", orderId); // Debugging log
 
+    // Update the payment status to "Paid"
     const query = `
         UPDATE sales_orders
-        SET claimed_status = 'Claimed'
-        WHERE id = ? AND payment_status = 'Paid'
+        SET payment_status = 'Paid', claimed_status = 'Unclaimed'
+        WHERE id = ?
     `;
 
     db.query(query, [orderId], async (err, result) => {
@@ -185,7 +186,7 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
             SELECT * FROM sales_orders WHERE id = ?
         `;
         db.query(orderQuery, [orderId], async (err, order) => {
-            if (err) {
+            if (err || order.length === 0) {
                 console.error("Error fetching order details:", err); // Log error
                 return res.status(500).json({ success: false, message: "Failed to fetch order details." });
             }
@@ -205,6 +206,7 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
                 const receiptFileName = `receipt_${orderId}.pdf`;
                 const filePath = path.join(__dirname, "../receipts", receiptFileName);
 
+                // Save the generated PDF
                 fs.writeFileSync(filePath, pdf);
 
                 console.log("Receipt generated:", filePath); // Debugging log
@@ -221,12 +223,12 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
         });
     });
 });
+
 // Route to mark an order as claimed
 router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
-    // Update the claimed status to "Claimed"
     const query = `
         UPDATE sales_orders
         SET claimed_status = 'Claimed'

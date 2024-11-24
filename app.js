@@ -41,6 +41,8 @@ db.connect(err => {
 
 app.set('db', db);
 
+
+
 const salesOrderRoutes = require('./routes/sales-order');
 app.use('/api/sales-order', salesOrderRoutes);
 app.use("/components", express.static("components"));

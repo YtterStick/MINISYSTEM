@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Mark an order as paid and show the receipt popup
-    function markAsPaid(orderId) {
+    function markAsPaid(orderId, rowElement) {
         fetch(`/api/sales-order/mark-paid/${orderId}`, {
             method: "POST",
         })
@@ -165,13 +165,13 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((data) => {
                 if (data.success) {
                     alert(data.message);
-
-                    // Show the receipt in the custom popup
+    
+                    if (rowElement) rowElement.remove();
+    
                     if (data.receipt) {
                         showPrintPopup(data.receipt);
                     }
-
-                    // Refresh the unpaid list
+                    //repres 
                     initializeSalesProcess();
                 } else {
                     alert("Failed to process the transaction.");
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Error marking order as paid.");
             });
     }
-
+    
     // Initialize Manage Distribution logic
  // Initialize Manage Distribution logic
  function initializeManageDistribution() {
@@ -247,19 +247,23 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAndDisplayTransactions();
 }
 
+// Function to mark an order as claimed
 function markAsClaimed(orderId, rowElement) {
     fetch(`/api/sales-order/mark-claimed/${orderId}`, {
         method: "POST",
     })
-        .then((res) => res.json())
+        .then((res) => {
+            if (!res.ok) throw new Error("Failed to mark order as claimed.");
+            return res.json();
+        })
         .then((data) => {
             if (data.success) {
                 alert(data.message);
 
-                // Remove the claimed row from the table
-                rowElement.remove();
+                // Remove the row dynamically from the table
+                if (rowElement) rowElement.remove();
             } else {
-                alert("Failed to mark as claimed.");
+                alert("Failed to process the claim.");
             }
         })
         .catch((err) => {

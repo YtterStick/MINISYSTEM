@@ -1,12 +1,9 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { PDFDocument, rgb, StandardFonts } = require("pdf-lib"); // Import pdf-lib directly
+const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 const isAuthenticated = require("../middleware/auth");
-
 const router = express.Router();
-
-// Global pricing configuration
 const PRICING = {
     services: {
         Wash: 95,
@@ -18,8 +15,6 @@ const PRICING = {
     fabricSoftenerCost: 13,
     plasticFee: 3.0,
 };
-
-// Process sales order (save or generate receipt)
 router.post("/process", isAuthenticated, async (req, res) => {
     try {
         const {
@@ -32,7 +27,7 @@ router.post("/process", isAuthenticated, async (req, res) => {
             paymentStatus,
         } = req.body;
 
-        console.log("Received request data:", req.body); // Debugging log
+        console.log("Received request data:", req.body); //Debugging test
 
         const baseCost = PRICING.services[services] || 0;
         const totalCost =
@@ -69,7 +64,6 @@ router.post("/process", isAuthenticated, async (req, res) => {
                     return res.status(500).json({ success: false, message: "Failed to process transaction." });
                 }
 
-                // If paid, generate the receipt
                 if (paymentStatus === "Paid") {
                     try {
                         const pdf = await generateReceiptPDF({
@@ -87,7 +81,7 @@ router.post("/process", isAuthenticated, async (req, res) => {
 
                         fs.writeFileSync(filePath, pdf);
 
-                        console.log("Receipt generated:", filePath); // Debugging log
+                        console.log("Receipt generated:", filePath);
 
                         res.status(200).json({
                             success: true,
@@ -108,16 +102,16 @@ router.post("/process", isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error." });
     }
 });
-// Fetch paid transactions with filters
-// Route to get paid transactions excluding claimed ones
+
+
 router.get("/paid", isAuthenticated, (req, res) => {
-    const { date, name } = req.query; // Date and name from query params
+    const { date, name } = req.query;
     const db = req.app.get("db");
 
     let query = `
         SELECT * FROM sales_orders 
         WHERE payment_status = 'Paid' 
-        AND claimed_status != 'Claimed'`;  // Exclude claimed orders
+        AND claimed_status != 'Claimed'`;
 
     if (date) {
         query += ` AND DATE(created_at) = ?`;
@@ -138,9 +132,6 @@ router.get("/paid", isAuthenticated, (req, res) => {
         res.status(200).json({ success: true, transactions: result });
     });
 });
-
-
-// Sales Order API Route to get unpaid transactions
 router.get("/unpaid", isAuthenticated, (req, res) => {
     const db = req.app.get("db");
 
@@ -160,14 +151,12 @@ router.get("/unpaid", isAuthenticated, (req, res) => {
     });
 });
 
-// Route to mark a transaction as paid and generate a receipt
 router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
-    console.log("Marking order as paid. Order ID:", orderId); // Debugging log
+    console.log("Marking order as paid. Order ID:", orderId); //Debugging test
 
-    // Update the payment status to "Paid"
     const query = `
         UPDATE sales_orders
         SET payment_status = 'Paid', claimed_status = 'Unclaimed'
@@ -224,7 +213,6 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
     });
 });
 
-// Route to mark an order as claimed
 router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
@@ -248,8 +236,52 @@ router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
     });
 });
 
+router.get("/sales-records", isAuthenticated, (req, res) => {
+    const { search, startDate, endDate, page = 1 } = req.query; 
+    const db = req.app.get("db"); 
 
-// Helper Function: Generate Receipt as PDF
+    let query = `SELECT * FROM sales_orders WHERE 1=1`;
+    const params = [];
+
+    if (search) {
+        query += ` AND customer_name LIKE ?`;
+        params.push(`%${search}%`);
+    }
+
+    if (startDate && endDate) {
+        query += ` AND created_at BETWEEN ? AND ?`;
+        params.push(startDate, endDate);
+    }
+
+    const limit = 10;
+    const offset = (page - 1) * limit;
+    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    db.query(query, params, (err, result) => {
+        if (err) {
+            console.error("Error fetching sales records:", err);
+            return res.status(500).json({ success: false, message: "Failed to fetch sales records." });
+        }
+
+        db.query(`SELECT COUNT(*) AS total FROM sales_orders`, (err, countResult) => {
+            if (err) {
+                console.error("Error fetching total count:", err);
+                return res.status(500).json({ success: false, message: "Failed to fetch total count." });
+            }
+
+            const totalRecords = countResult[0].total;
+            const totalPages = Math.ceil(totalRecords / limit);
+
+            res.status(200).json({
+                success: true,
+                records: result,
+                pages: totalPages,
+            });
+        });
+    });
+});
+
 async function generateReceiptPDF(data) {
     const pdfDoc = await PDFDocument.create();
     const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
@@ -257,7 +289,6 @@ async function generateReceiptPDF(data) {
     const page = pdfDoc.addPage([400, 600]);
     const { customerName, services, numberOfLoads, detergentCount, fabricSoftenerCount, additionalFees, totalCost } = data;
 
-    // Explicitly convert additionalFees to a number
     const additionalFeesNumeric = Number(additionalFees) || PRICING.plasticFee;
 
     const detergentAmount = (detergentCount || 0) * PRICING.detergentCost;

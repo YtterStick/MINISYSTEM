@@ -8,8 +8,8 @@ $highlight-color: #ff5c5c;
 $fonts: 'General Sans', sans-serif;
 $transition: 0.3s ease-in-out;
 $sidebar-width: 300px;
-$text-color: #333; /* Example for primary text color */
-$text-color-secondary: #555; /* Example for secondary text color */
+$text-color: #333;
+$text-color-secondary: #555;
 
 * { 
     margin: 0;
@@ -24,7 +24,6 @@ body {
     background-color: $bg-color;
 }
 
-// Layout Wrapper
 .wrapper {
 
   display: flex;
@@ -35,8 +34,8 @@ body {
 .sidebar {
   width: $sidebar-width;
   height: 100vh;
-  background-color:$bg-color-secondary; // Your existing sidebar color
-  color: #ecf0f1; // Your existing text color
+  background-color:$bg-color-secondary; 
+  color: #ecf0f1; //text color
   position: fixed;
   top: 0;
   left: 0;
@@ -45,7 +44,6 @@ body {
   transition: width $transition;
 overflow-y: auto;
 
-  // Brand Logo
   .brand-logo {
     gap: 15px;
     display: flex;
@@ -55,7 +53,6 @@ overflow-y: auto;
     font-weight: bold;
   }
 
-  // Navigation Items
   .navbar-item {
     list-style: none;
     padding: 0;
@@ -87,7 +84,6 @@ overflow-y: auto;
         }
       }
 
-      // Submenu for nested items
       .submenu {
         display: none;
         padding-left: 2rem;
@@ -130,7 +126,7 @@ overflow-y: auto;
 }
 
 .account { 
-    margin-top: 7.7rem;// Space above the logout button
+    margin-top: 7.7rem;//sidebar logout
     display: flex;
     align-items: center;
     padding: 10px;
@@ -364,7 +360,6 @@ overflow-y: auto;
       }
     }
   }
-  // Content Styling
 .unpaid-orders {
   margin-top: 20px;
   padding: 20px;
@@ -413,7 +408,7 @@ overflow-y: auto;
   }
 }
 
-// Popup container (background overlay)
+//Popup container
 .popup {
   display: none;
   position: fixed;
@@ -439,16 +434,16 @@ overflow-y: auto;
       .popup-close-button {
           position: absolute;
           top: 10px;
-          left: 10px; // Place it on the left
+          left: 10px;
           background: none;
           border: none;
           font-size: 24px;
           font-weight: bold;
-          color: $text-color; // Use a predefined variable or a dark color
+          color: $text-color; 
           cursor: pointer;
 
           &:hover {
-              color: $highlight-color; // Highlight color for hover
+              color: $highlight-color;
           }
       }
 
@@ -502,50 +497,8 @@ overflow-y: auto;
       }
   }
 }
-.manage-distribution-container {
-  padding: 20px;
 
-  h2 {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: $primary-color;
-  }
-
-  .distribution-table {
-      width: 100%;
-      border-collapse: collapse;
-
-      th, td {
-          padding: 12px;
-          border: 1px solid $secondary-color;
-          text-align: left;
-      }
-
-      th {
-          background-color: $bg-color-secondary;
-          color: $white-color;
-      }
-
-      tr:nth-child(even) {
-          background-color: $strip-color;
-      }
-
-      .mark-claimed-btn {
-          background-color: transparent;
-          color: $white-color;
-          padding: 8px 12px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-
-          &:hover {
-              background-color: green;
-          }
-      }
-  }
-}
-
+//manage-distribution
 .view-sales-record-container {
   padding: 20px;
   margin: 20px auto;
@@ -586,6 +539,11 @@ overflow-y: auto;
       }
     }
 
+    .date-range {
+      display: flex;
+      gap: 10px;
+    }
+
     #search-bar {
       width: 300px;
       padding: 10px;
@@ -610,6 +568,149 @@ overflow-y: auto;
     th, td {
       padding: 10px;
       text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    th {
+      background-color: $strip-color;
+      font-size: 14px;
+    }
+
+    td {
+      background-color: $bg-color-secondary;
+      font-size: 14px;
+      border-bottom: 1px solid #444;
+    }
+
+    tr:hover {
+      background-color: $primary-color;
+      color: $white-color;
+    }
+
+    .paid {
+      color: #64ff64;
+      font-weight: bold;
+    }
+
+    .unpaid {
+      color: $highlight-color;
+      font-weight: bold;
+    }
+
+    .claimed {
+      color: #00c4cc;
+    }
+
+    .unclaimed {
+      color: $strip-color;
+    }
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+
+    button {
+      background-color: $secondary-color;
+      border: 1px solid $strip-color;
+      color: $white-color;
+      padding: 5px 10px;
+      margin: 0 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: $transition;
+
+      &:hover {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+
+      &.active {
+        background-color: $primary-color;
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+
+//view-sales-record
+.view-sales-record-container {
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 1200px;
+  background-color: $bg-color-secondary;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: $primary-color;
+  }
+
+  .filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    label {
+      font-size: 14px;
+      margin-right: 10px;
+    }
+
+    input, select {
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #444;
+      background-color: $bg-color;
+      color: $white-color;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+      }
+    }
+
+    .date-range {
+      display: flex;
+      gap: 10px;
+    }
+
+    #search-bar {
+      width: 300px;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid $strip-color;
+      background-color: $bg-color;
+      color: $white-color;
+
+      &::placeholder {
+        color: #888;
+      }
+    }
+  }
+
+  .sales-record-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: $bg-color;
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     th {
@@ -673,5 +774,160 @@ overflow-y: auto;
         font-weight: bold;
       }
     }
+  }
+}
+
+
+
+.view-sales-record-container {
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 1200px;
+  background-color: $bg-color-secondary;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: $primary-color;
+  }
+
+  .filters {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+
+      label {
+          font-size: 14px;
+          margin-right: 10px;
+      }
+
+      input, select {
+          padding: 10px;
+          font-size: 14px;
+          border-radius: 5px;
+          border: 1px solid #444;
+          background-color: $bg-color;
+          color: $white-color;
+
+          &:focus {
+              outline: none;
+              border-color: $primary-color;
+          }
+      }
+
+      .date-range {
+          display: flex;
+          gap: 10px;
+      }
+
+      #search-bar {
+          width: 300px;
+          padding: 10px;
+          font-size: 14px;
+          border-radius: 5px;
+          border: 1px solid $strip-color;
+          background-color: $bg-color;
+          color: $white-color;
+
+          &::placeholder {
+              color: #888;
+          }
+      }
+  }
+
+  .sales-record-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: $bg-color;
+
+      th, td {
+          padding: 10px;
+          text-align: left;
+          word-wrap: break-word; /* Allow text to wrap within cells */
+          overflow: hidden;
+          text-overflow: ellipsis; /* Ensures that content is truncated if it's too long */
+          max-width: 200px; /* Set a maximum width for cells */
+          white-space: nowrap; /* Prevent the text from breaking onto multiple lines */
+          height: 40px; /* Fix row height */
+      }
+
+      th {
+          background-color: $strip-color;
+          font-size: 14px;
+          width: 15%; /* Set fixed width for header */
+      }
+
+      td {
+          background-color: $bg-color-secondary;
+          font-size: 14px;
+          border-bottom: 1px solid #444;
+      }
+
+      /* Set fixed column widths */
+      td:nth-child(1), th:nth-child(1) { width: 20%; } /* Customer Name */
+      td:nth-child(2), th:nth-child(2) { width: 10%; } /* Number of Loads */
+      td:nth-child(3), th:nth-child(3) { width: 15%; } /* Service */
+      td:nth-child(4), th:nth-child(4) { width: 10%; } /* Detergent */
+      td:nth-child(5), th:nth-child(5) { width: 10%; } /* Fabric Softener */
+      td:nth-child(6), th:nth-child(6) { width: 10%; } /* Total Cost */
+      td:nth-child(7), th:nth-child(7) { width: 10%; } /* Payment Status */
+      td:nth-child(8), th:nth-child(8) { width: 10%; } /* Claimed Status */
+      td:nth-child(9), th:nth-child(9) { width: 10%; } /* Date & Time */
+
+      tr:hover {
+          background-color: $primary-color;
+          color: $white-color;
+      }
+
+      .paid {
+          color: #64ff64; /* Green for paid */
+          font-weight: bold;
+      }
+
+      .unpaid {
+          color: $highlight-color; /* Red for unpaid */
+          font-weight: bold;
+      }
+
+      .claimed {
+          color: #00c4cc; /* Blue for claimed */
+      }
+
+      .unclaimed {
+          color: $strip-color; /* Gray for unclaimed */
+      }
+  }
+
+  .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+
+      button {
+          background-color: $secondary-color;
+          border: 1px solid $strip-color;
+          color: $white-color;
+          padding: 5px 10px;
+          margin: 0 5px;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: $transition;
+
+          &:hover {
+              background-color: $primary-color;
+              border-color: $primary-color;
+          }
+
+          &.active {
+              background-color: $primary-color;
+              font-weight: bold;
+          }
+      }
   }
 }

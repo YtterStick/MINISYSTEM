@@ -48,14 +48,12 @@ app.use('/api/sales-order', salesOrderRoutes);
 app.use("/components", express.static("components"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/accounts", require("./routes/accounts"));;
-app.use("/api/sales-order", require("./routes/sales-order"));
 app.use("/receipts", express.static(path.join(__dirname, "receipts")));
 
 
 app.get('/api/sales-order/unpaid', (req, res) => {
     res.json({ message: "Unpaid orders will be fetched here" });
 });
-
 
 
 const cors = require('cors');

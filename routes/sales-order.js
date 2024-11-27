@@ -4,6 +4,7 @@ const path = require("path");
 const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 const isAuthenticated = require("../middleware/auth");
 const router = express.Router();
+
 const PRICING = {
     services: {
         Wash: 95,
@@ -15,7 +16,8 @@ const PRICING = {
     fabricSoftenerCost: 13,
     plasticFee: 3.0,
 };
-router.post("/process", isAuthenticated, async (req, res) => {
+
+router.post("/process", isAuthenticated("Staff"), async (req, res) => {
     try {
         const {
             userId,
@@ -27,7 +29,9 @@ router.post("/process", isAuthenticated, async (req, res) => {
             paymentStatus,
         } = req.body;
 
-        console.log("Received request data:", req.body); //Debugging test
+        const branchId = req.session.user.branch_id;  // Retrieve the logged-in user's branch_id
+
+        console.log("Received request data:", req.body);
 
         const baseCost = PRICING.services[services] || 0;
         const totalCost =
@@ -39,8 +43,8 @@ router.post("/process", isAuthenticated, async (req, res) => {
         const db = req.app.get("db");
 
         const query = `
-            INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, month_created)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, branch_id, month_created)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
 
@@ -56,6 +60,7 @@ router.post("/process", isAuthenticated, async (req, res) => {
                 PRICING.plasticFee,
                 totalCost,
                 paymentStatus,
+                branchId,  // Pass the branch_id along with the other data
                 monthCreated,
             ],
             async (err, result) => {
@@ -103,27 +108,32 @@ router.post("/process", isAuthenticated, async (req, res) => {
     }
 });
 
-
-router.get("/paid", isAuthenticated, (req, res) => {
+router.get("/paid", isAuthenticated("Staff"), (req, res) => {
     const { date, name } = req.query;
     const db = req.app.get("db");
 
+    const branchId = req.session.user.branch_id; // Retrieve branch_id from session
+
     let query = `
-        SELECT * FROM sales_orders 
-        WHERE payment_status = 'Paid' 
-        AND claimed_status != 'Claimed'`;
+        SELECT * FROM sales_orders
+        WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'
+    `;
+
+    const params = [branchId];
 
     if (date) {
         query += ` AND DATE(created_at) = ?`;
+        params.push(date);
     }
 
     if (name) {
         query += ` AND customer_name LIKE ?`;
+        params.push(`%${name}%`);
     }
 
     query += ` ORDER BY created_at DESC`;
 
-    db.query(query, [date, `%${name}%`], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             console.error("Error fetching paid transactions:", err);
             return res.status(500).json({ success: false, message: "Failed to fetch paid transactions." });
@@ -132,17 +142,20 @@ router.get("/paid", isAuthenticated, (req, res) => {
         res.status(200).json({ success: true, transactions: result });
     });
 });
-router.get("/unpaid", isAuthenticated, (req, res) => {
+
+router.get("/unpaid", isAuthenticated("Staff"), (req, res) => {
     const db = req.app.get("db");
 
+    const branchId = req.session.user.branch_id; // Retrieve branch_id from session
+
     const query = `
-        SELECT * FROM sales_orders 
-        WHERE payment_status = 'Unpaid'
+        SELECT * FROM sales_orders
+        WHERE branch_id = ? AND payment_status = 'Unpaid'
         ORDER BY month_created DESC
     `;
 
-    db.query(query, (err, result) => {
-        if (err) {  
+    db.query(query, [branchId], (err, result) => {
+        if (err) {
             console.error("Error fetching unpaid transactions:", err);
             return res.status(500).json({ success: false, message: "Failed to fetch unpaid transactions." });
         }
@@ -151,32 +164,28 @@ router.get("/unpaid", isAuthenticated, (req, res) => {
     });
 });
 
-router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
+router.post("/mark-paid/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
-
-    console.log("Marking order as paid. Order ID:", orderId); //Debugging test
 
     const query = `
         UPDATE sales_orders
         SET payment_status = 'Paid', claimed_status = 'Unclaimed'
-        WHERE id = ?
+        WHERE id = ? AND branch_id = ?
     `;
 
-    db.query(query, [orderId], async (err, result) => {
+    db.query(query, [orderId, req.session.user.branch_id], async (err, result) => {
         if (err) {
-            console.error("Error updating payment status:", err); // Log error
+            console.error("Error updating payment status:", err);
             return res.status(500).json({ success: false, message: "Failed to update payment status." });
         }
 
-        console.log("Payment status updated. Generating receipt..."); // Debugging log
-
         const orderQuery = `
-            SELECT * FROM sales_orders WHERE id = ?
+            SELECT * FROM sales_orders WHERE id = ? AND branch_id = ?
         `;
-        db.query(orderQuery, [orderId], async (err, order) => {
+        db.query(orderQuery, [orderId, req.session.user.branch_id], async (err, order) => {
             if (err || order.length === 0) {
-                console.error("Error fetching order details:", err); // Log error
+                console.error("Error fetching order details:", err);
                 return res.status(500).json({ success: false, message: "Failed to fetch order details." });
             }
 
@@ -188,8 +197,8 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
                     numberOfLoads: orderData.number_of_loads,
                     detergentCount: orderData.detergent_count,
                     fabricSoftenerCount: orderData.fabric_softener_count,
-                    additionalFees: Number(orderData.additional_fees), // Ensure numeric value
-                    totalCost: Number(orderData.total_cost), // Ensure numeric value
+                    additionalFees: Number(orderData.additional_fees),
+                    totalCost: Number(orderData.total_cost),
                 });
 
                 const receiptFileName = `receipt_${orderId}.pdf`;
@@ -198,32 +207,30 @@ router.post("/mark-paid/:orderId", isAuthenticated, (req, res) => {
                 // Save the generated PDF
                 fs.writeFileSync(filePath, pdf);
 
-                console.log("Receipt generated:", filePath); // Debugging log
-
                 res.status(200).json({
                     success: true,
                     message: "Transaction marked as paid and receipt generated.",
                     receipt: `/receipts/${receiptFileName}`,
                 });
             } catch (err) {
-                console.error("Error generating receipt:", err); // Log error
+                console.error("Error generating receipt:", err);
                 return res.status(500).json({ success: false, message: "Failed to generate receipt." });
             }
         });
     });
 });
 
-router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
+router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
     const query = `
         UPDATE sales_orders
         SET claimed_status = 'Claimed'
-        WHERE id = ?
+        WHERE id = ? AND branch_id = ?
     `;
 
-    db.query(query, [orderId], (err, result) => {
+    db.query(query, [orderId, req.session.user.branch_id], (err, result) => {
         if (err) {
             console.error("Error marking order as claimed:", err);
             return res.status(500).json({ success: false, message: "Failed to mark order as claimed." });
@@ -231,17 +238,19 @@ router.post("/mark-claimed/:orderId", isAuthenticated, (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Order marked as claimed."
+            message: "Order marked as claimed.",
         });
     });
 });
 
-router.get("/sales-records", isAuthenticated, (req, res) => {
-    const { search, startDate, endDate, page = 1 } = req.query; 
-    const db = req.app.get("db"); 
+router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
+    const { search, startDate, endDate, page = 1 } = req.query;
+    const db = req.app.get("db");
 
-    let query = `SELECT * FROM sales_orders WHERE 1=1`;
-    const params = [];
+    const branchId = req.session.user.branch_id;
+
+    let query = `SELECT * FROM sales_orders WHERE branch_id = ?`;
+    const params = [branchId];
 
     if (search) {
         query += ` AND customer_name LIKE ?`;
@@ -264,7 +273,7 @@ router.get("/sales-records", isAuthenticated, (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch sales records." });
         }
 
-        db.query(`SELECT COUNT(*) AS total FROM sales_orders`, (err, countResult) => {
+        db.query(`SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ?`, [branchId], (err, countResult) => {
             if (err) {
                 console.error("Error fetching total count:", err);
                 return res.status(500).json({ success: false, message: "Failed to fetch total count." });
@@ -314,6 +323,5 @@ async function generateReceiptPDF(data) {
 
     return await pdfDoc.save();
 }
-
 
 module.exports = router;

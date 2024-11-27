@@ -1,8 +1,10 @@
+require("dotenv").config(); // Load environment variables from .env file
 const express = require('express');
 const mysql = require('mysql2');
 const session = require('express-session');
 const path = require('path');
 const exp = require('constants');
+
 
 const app = express();
 const PORT = 3000;
@@ -20,18 +22,21 @@ app.use('/staff_scripts', express.static(path.join(__dirname, 'staff_scripts')))
 
 app.use(
     session({
-        secret: 'secret-key',
+        secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: true,
-        cookie: {secure:false},
+        cookie: {
+            secure: false, //false muna kasi local
+            httpOnly: true,
+        },
     })
 );
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'starwash_db',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
 });
 
 db.connect(err => {
@@ -42,15 +47,15 @@ db.connect(err => {
 app.set('db', db);
 
 
+app.use("/api/accounts", require("./routes/accounts"));
+app.use('/create-account', require('./routes/createAccount'));
+
 
 const salesOrderRoutes = require('./routes/sales-order');
 app.use('/api/sales-order', salesOrderRoutes);
 app.use("/components", express.static("components"));
 app.use("/api/users", require("./routes/users"));
-app.use("/api/accounts", require("./routes/accounts"));;
 app.use("/receipts", express.static(path.join(__dirname, "receipts")));
-
-
 app.get('/api/sales-order/unpaid', (req, res) => {
     res.json({ message: "Unpaid orders will be fetched here" });
 });

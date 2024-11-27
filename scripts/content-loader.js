@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     attachCreateAccountFormHandler();
                 } else if (section === 'existing-account') {
                     fetchExistingAccounts();
+                } else if (section === 'sales-orders') {
+                    loadSalesOrders();
                 }
             })
             .catch(error => {
@@ -56,7 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!tableBody) return;
 
-        fetch("/api/accounts")
+        const branchId = localStorage.getItem("branch_id");
+
+        fetch(`/api/accounts?branch_id=${branchId}`)
             .then(response => response.json())
             .then(accounts => {
                 tableBody.innerHTML = "";
@@ -77,12 +81,13 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
                 console.error("Error fetching accounts:", error);
+                tableBody.innerHTML = "<tr><td colspan='4'>Error loading accounts.</td></tr>";
             });
     }
 
+    
     function attachCreateAccountFormHandler() {
         const form = document.getElementById('account-form');
-
         if (form) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -90,6 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData.entries());
 
+                const branchId = document.getElementById('branch_id').value;
+                data.branch = branchId;
+                console.log(branchId);
+                console.log("Form Data with branch:", data.branch); 
                 try {
                     const response = await fetch('/create-account', {
                         method: 'POST',
@@ -112,6 +121,68 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // // Load sales orders for the current branch
+    // function loadSalesOrders() {
+    //     const branchId = localStorage.getItem("branch_id");
+
+    //     fetch(`/api/sales-order/unpaid?branch_id=${branchId}`)
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.success) {
+    //                 const ordersTableBody = document.querySelector("#sales-orders-body");
+    //                 ordersTableBody.innerHTML = "";  // Clear any previous orders
+
+    //                 data.orders.forEach(order => {
+    //                     const row = document.createElement("tr");
+    //                     row.innerHTML = `
+    //                         <td>${order.customer_name}</td>
+    //                         <td>${order.services}</td>
+    //                         <td>${order.number_of_loads}</td>
+    //                         <td>${order.detergent_count}</td>
+    //                         <td>${order.fabric_softener_count}</td>
+    //                         <td>PHP ${order.total_cost}</td>
+    //                         <td>
+    //                             <button class="btn-mark-paid" data-id="${order.id}">Mark as Paid</button>
+    //                         </td>
+    //                     `;
+    //                     ordersTableBody.appendChild(row);
+    //                 });
+
+    //                 // Attach event listeners for "Mark as Paid" buttons
+    //                 const processButtons = document.querySelectorAll(".btn-mark-paid");
+    //                 processButtons.forEach(button => {
+    //                     button.addEventListener('click', (e) => {
+    //                         const orderId = e.target.getAttribute('data-id');
+    //                         markOrderAsPaid(orderId);
+    //                     });
+    //                 });
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error("Error fetching sales orders:", error);
+    //         });
+    // }
+
+    // // Function to mark order as paid
+    // function markOrderAsPaid(orderId) {
+    //     fetch(`/api/sales-order/mark-paid/${orderId}`, {
+    //         method: "POST"
+    //     })
+    //     .then(res => res.json())
+    //     .then(data => {
+    //         if (data.success) {
+    //             alert(data.message);
+    //             loadSalesOrders(); // Refresh the orders list
+    //         } else {
+    //             alert("Failed to mark order as paid.");
+    //         }
+    //     })
+    //     .catch(err => {
+    //         console.error("Error marking order as paid:", err);
+    //     });
+    // }
+
+    // Load the initial content (e.g., dashboard) after page loads
     links.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();

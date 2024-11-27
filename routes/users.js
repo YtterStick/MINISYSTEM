@@ -14,16 +14,21 @@ router.post("/login", (req, res) => {
         }
 
         const user = results[0];
+
+        // Compare password with hashed password
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             return res.status(400).send("Invalid password.");
         }
 
-        // Save user session
-        req.session.user = { id: user.id, role: user.role };
+        // Save user session with user id, role, branch_id
+        req.session.user = { id: user.id, role: user.role, branch_id: user.branch_id };
 
-        // Send the role to the frontend
-        res.status(200).json({ userId: user.id, role: user.role });
+        res.status(200).json({
+            userId: user.id,
+            role: user.role,
+            branch_id: user.branch_id,
+        });
     });
 });
 

@@ -29,7 +29,8 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
             paymentStatus,
         } = req.body;
 
-        const branchId = req.session.user.branch_id;  // Retrieve the logged-in user's branch_id
+        const branchId = req.session.user.branch_id; // Retrieve branch_id from session
+        const db = req.app.get("db");
 
         console.log("Received request data:", req.body);
 
@@ -40,13 +41,18 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
             (fabricSoftenerCount || 0) * PRICING.fabricSoftenerCost +
             PRICING.plasticFee;
 
-        const db = req.app.get("db");
-
         const query = `
-            INSERT INTO sales_orders (user_id, customer_name, number_of_loads, services, detergent_count, fabric_softener_count, additional_fees, total_cost, payment_status, branch_id, month_created)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO sales_orders (
+                user_id, customer_name, number_of_loads, services,
+                detergent_count, fabric_softener_count, additional_fees, total_cost,
+                payment_status, branch_id, month_created, paid_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
+
+        // If payment status is "Paid," set the `paid_at` timestamp to now
+        const paidAt = paymentStatus === "Paid" ? new Date() : null;
 
         db.query(
             query,
@@ -60,8 +66,9 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
                 PRICING.plasticFee,
                 totalCost,
                 paymentStatus,
-                branchId,  // Pass the branch_id along with the other data
+                branchId,
                 monthCreated,
+                paidAt, // Include the paid_at timestamp
             ],
             async (err, result) => {
                 if (err) {
@@ -79,6 +86,9 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
                             fabricSoftenerCount,
                             additionalFees: PRICING.plasticFee,
                             totalCost,
+                            createdAt: new Date(), // Use current timestamp for created_at
+                            paidAt, // Use the paid_at timestamp if applicable
+                            claimedAt: null, // No claimed timestamp initially
                         });
 
                         const receiptFileName = `receipt_${result.insertId || Date.now()}.pdf`;
@@ -98,8 +108,9 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
                         return res.status(500).json({ success: false, message: "Failed to generate receipt." });
                     }
                 } else {
-                    res.status(200).json({ success: true, message: "Transaction saved as unpaid." });
+                    res.status(200).json({ success: true, message: "Transaction saved as unpaid" });
                 }
+
             }
         );
     } catch (err) {
@@ -107,31 +118,39 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error." });
     }
 });
-
 router.get("/paid", isAuthenticated("Staff"), (req, res) => {
-    const { date, name } = req.query;
+    const { startDate, endDate, name, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
     const db = req.app.get("db");
-
     const branchId = req.session.user.branch_id; // Retrieve branch_id from session
 
+    // Base query for paid transactions
     let query = `
         SELECT * FROM sales_orders
         WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'
     `;
-
     const params = [branchId];
 
-    if (date) {
-        query += ` AND DATE(created_at) = ?`;
-        params.push(date);
+    // Apply date filters based on 'Date Paid' (paid_at)
+    if (startDate) {
+        query += ` AND paid_at >= ?`;
+        params.push(`${startDate} 00:00:00`); // Use start of the day
     }
 
+    if (endDate) {
+        query += ` AND paid_at <= ?`;
+        params.push(`${endDate} 23:59:59`); // Use end of the day
+    }
+
+    // Apply search filter for customer name
     if (name) {
         query += ` AND customer_name LIKE ?`;
         params.push(`%${name}%`);
     }
 
-    query += ` ORDER BY created_at DESC`;
+    // Pagination and sorting by 'Date Paid' (paid_at)
+    query += ` ORDER BY paid_at DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), parseInt(offset));
 
     db.query(query, params, (err, result) => {
         if (err) {
@@ -139,9 +158,24 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch paid transactions." });
         }
 
-        res.status(200).json({ success: true, transactions: result });
+        // Fetch the total number of records for pagination
+        const countQuery = `SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'`;
+        db.query(countQuery, [branchId], (err, countResult) => {
+            if (err) {
+                console.error("Error fetching total count:", err);
+                return res.status(500).json({ success: false, message: "Failed to fetch total count." });
+            }
+
+            const totalRecords = countResult[0].total;
+            res.status(200).json({
+                success: true,
+                transactions: result,
+                totalPages: Math.ceil(totalRecords / limit), // Calculate total pages for pagination
+            });
+        });
     });
 });
+
 
 router.get("/unpaid", isAuthenticated("Staff"), (req, res) => {
     const db = req.app.get("db");
@@ -170,7 +204,7 @@ router.post("/mark-paid/:orderId", isAuthenticated("Staff"), (req, res) => {
 
     const query = `
         UPDATE sales_orders
-        SET payment_status = 'Paid', claimed_status = 'Unclaimed'
+        SET payment_status = 'Paid', claimed_status = 'Unclaimed', paid_at = NOW()
         WHERE id = ? AND branch_id = ?
     `;
 
@@ -199,6 +233,9 @@ router.post("/mark-paid/:orderId", isAuthenticated("Staff"), (req, res) => {
                     fabricSoftenerCount: orderData.fabric_softener_count,
                     additionalFees: Number(orderData.additional_fees),
                     totalCost: Number(orderData.total_cost),
+                    createdAt: orderData.created_at,
+                    paidAt: orderData.paid_at,
+                    claimedAt: orderData.claimed_at,
                 });
 
                 const receiptFileName = `receipt_${orderId}.pdf`;
@@ -220,13 +257,14 @@ router.post("/mark-paid/:orderId", isAuthenticated("Staff"), (req, res) => {
     });
 });
 
+
 router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
     const query = `
         UPDATE sales_orders
-        SET claimed_status = 'Claimed'
+        SET claimed_status = 'Claimed', claimed_at = NOW()
         WHERE id = ? AND branch_id = ?
     `;
 
@@ -242,7 +280,6 @@ router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
         });
     });
 });
-
 router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
     const { search, startDate, endDate, page = 1 } = req.query;
     const db = req.app.get("db");
@@ -252,14 +289,18 @@ router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
     let query = `SELECT * FROM sales_orders WHERE branch_id = ?`;
     const params = [branchId];
 
+    // Handle search functionality
     if (search) {
         query += ` AND customer_name LIKE ?`;
         params.push(`%${search}%`);
     }
 
+    // Handle start and end date filtering
     if (startDate && endDate) {
+        // Ensure the date filter includes the entire day
         query += ` AND created_at BETWEEN ? AND ?`;
-        params.push(startDate, endDate);
+        params.push(`${startDate} 00:00:00`);  // Start at the beginning of the day
+        params.push(`${endDate} 23:59:59`);  // End at the last moment of the day
     }
 
     const limit = 10;
@@ -273,6 +314,7 @@ router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch sales records." });
         }
 
+        // Query to get total count for pagination
         db.query(`SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ?`, [branchId], (err, countResult) => {
             if (err) {
                 console.error("Error fetching total count:", err);
@@ -296,15 +338,23 @@ async function generateReceiptPDF(data) {
     const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
     const page = pdfDoc.addPage([400, 600]);
-    const { customerName, services, numberOfLoads, detergentCount, fabricSoftenerCount, additionalFees, totalCost } = data;
+    const {
+        customerName,
+        services,
+        numberOfLoads,
+        detergentCount,
+        fabricSoftenerCount,
+        additionalFees,
+        totalCost,
+        createdAt,
+        paidAt,
+        claimedAt,
+    } = data;
 
     const additionalFeesNumeric = Number(additionalFees) || PRICING.plasticFee;
 
     const detergentAmount = (detergentCount || 0) * PRICING.detergentCost;
     const fabricSoftenerAmount = (fabricSoftenerCount || 0) * PRICING.fabricSoftenerCost;
-
-    const currentDate = new Date();
-    const formattedDate = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
 
     page.drawText("STARWASH RECEIPT", { x: 150, y: 550, size: 16, font: timesRomanFont, color: rgb(0, 0, 0) });
     page.drawText(`Customer Name: ${customerName}`, { x: 50, y: 500, size: 12, font: timesRomanFont });
@@ -319,9 +369,17 @@ async function generateReceiptPDF(data) {
     page.drawText(`Fabric Softener: PHP ${fabricSoftenerAmount}`, { x: 50, y: 420, size: 12, font: timesRomanFont });
     page.drawText(`Plastic Fee: PHP ${additionalFeesNumeric.toFixed(2)}`, { x: 50, y: 400, size: 12, font: timesRomanFont });
     page.drawText(`Total Amount: PHP ${totalCost.toFixed(2)}`, { x: 50, y: 380, size: 14, font: timesRomanFont, color: rgb(1, 0, 0) });
-    page.drawText(`Date: ${formattedDate}`, { x: 50, y: 360, size: 10, font: timesRomanFont });
+    page.drawText(`Date Created: ${new Date(createdAt).toLocaleString()}`, { x: 50, y: 360, size: 10, font: timesRomanFont });
+    if (paidAt) {
+        page.drawText(`Date Paid: ${new Date(paidAt).toLocaleString()}`, { x: 50, y: 340, size: 10, font: timesRomanFont });
+    }
+    if (claimedAt) {
+        page.drawText(`Date Claimed: ${new Date(claimedAt).toLocaleString()}`, { x: 50, y: 320, size: 10, font: timesRomanFont });
+    }
 
     return await pdfDoc.save();
 }
+
+
 
 module.exports = router;

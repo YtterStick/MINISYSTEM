@@ -1,15 +1,14 @@
-<div class="view-sales-record-container">
+<div class="manage-distribution">
     <h2>Manage Distribution</h2>
 
     <div class="filters">
-        <label for="date-filter">Choose Date:</label>
-        <input type="date" id="date-filter">
-        
-        <input
-            type="text"
-            id="search-bar"
-            placeholder="Search by customer name"
-        />
+        <label for="start-date">Start Date:</label>
+        <input type="date" id="start-date">
+
+        <label for="end-date">End Date:</label>
+        <input type="date" id="end-date">
+
+        <input type="text" id="search-bar" placeholder="Search by customer name">
     </div>
 
     <table class="sales-record-table">
@@ -17,12 +16,12 @@
             <tr>
                 <th>Customer Name</th>
                 <th>Number of Loads</th>
-                <th>Date & Time</th>
+                <th>Date & Time Paid</th> <!-- Only keep this column -->
                 <th>Action</th>
             </tr>
         </thead>
         <tbody id="distribution-orders-body">
-            <!-- Paid and unclaimed transactions will be dynamically loaded here -->
+            <!-- Data will be dynamically loaded here -->
         </tbody>
     </table>
 

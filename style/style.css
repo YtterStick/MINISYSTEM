@@ -174,10 +174,6 @@ body {
   border-radius: 10px;
   outline: none;
 }
-.main-content .search-button .form-input::-moz-placeholder {
-  color: #aeabd9;
-  font-size: 12px;
-}
 .main-content .search-button .form-input::placeholder {
   color: #aeabd9;
   font-size: 12px;
@@ -382,6 +378,31 @@ body {
   outline: none;
   border-color: #6359E9;
 }
+#account-management .account-form .form-group .password-container {
+  position: relative;
+}
+#account-management .account-form .form-group .password-container input {
+  width: 100%;
+  padding-right: 40px;
+}
+#account-management .account-form .form-group .password-container .toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 16px;
+  cursor: pointer;
+  color: #FFFFFF;
+}
+#account-management .account-form .form-group .password-container .toggle-password:hover {
+  color: rgb(183.6382978723, 179.0638297872, 244.9361702128);
+}
+#account-management .account-form .form-group .error-message {
+  color: #ff5c5c;
+  font-size: 12px;
+  margin-top: 5px;
+  display: none;
+}
 #account-management .account-form .form-group .btn-submit {
   background-color: #6359E9;
   color: #FFFFFF;
@@ -393,7 +414,7 @@ body {
   transition: background-color 0.3s ease-in-out;
 }
 #account-management .account-form .form-group .btn-submit:hover {
-  background-color: #392ce3;
+  background-color: #6359E9;
 }
 
 .account-list h3 {
@@ -495,4 +516,6 @@ body {
 .popup .popup-content .form-group input:focus, .popup .popup-content .form-group select:focus {
   outline: none;
   border-color: #6359E9;
-}/*# sourceMappingURL=style.css.map */
+}
+
+/*# sourceMappingURL=style.css.map */

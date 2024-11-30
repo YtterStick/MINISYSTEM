@@ -24,7 +24,13 @@
                 <th>Total Cost</th>
                 <th>Payment Status</th>
                 <th>Claimed Status</th>
-                <th>Date & Time</th>
+                <th>
+                    <select class="date-filter" id="date-filter-dropdown">
+                        <option value="created_at" selected>Date Created</option>
+                        <option value="paid_at">Date Paid</option>
+                        <option value="claimed_at">Date Claimed</option>
+                    </select>
+                </th>
             </tr>
         </thead>
         <tbody id="sales-records-body">

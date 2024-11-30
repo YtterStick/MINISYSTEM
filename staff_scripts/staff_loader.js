@@ -2,7 +2,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const links = document.querySelectorAll('.nav-link[data-section]');
     const mainContent = document.getElementById('content-id');
     const dropdownLinks = document.querySelectorAll('.nav-link[onclick="toggleDropdown(event)"]');
-    const userId = localStorage.getItem("userId"); // Ensure userId is available globally
+    const userId = sessionStorage.getItem("userId"); // Ensure userId is available globally
+
+    const logoutBtn = document.getElementById("logout-btn");
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            window.location.href = "/api/users/logout"; // Navigates to the logout route
+        });
+    }
+
     console.log("mainContent: ", mainContent);
 
     if(!mainContent){
@@ -80,16 +89,35 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize Create Sales Order functionality
     function initializeCreateSalesOrder() {
         const form = document.getElementById("sales-order-form");
-
+        const serviceDropdown = document.getElementById("services");
+        const detergentInput = document.getElementById("detergent-count");
+        const softenerInput = document.getElementById("fabric-softener-count");
+    
+        // Disable inputs for "Dry" service
+        serviceDropdown.addEventListener("change", () => {
+            const selectedService = serviceDropdown.value;
+    
+            if (selectedService === "Dry") {
+                detergentInput.value = 0;
+                detergentInput.disabled = true;
+                softenerInput.value = 0;
+                softenerInput.disabled = true;
+            } else {
+                detergentInput.disabled = false;
+                softenerInput.disabled = false;
+            }
+        });
+    
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-
+    
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-
+    
             // Attach userId to the request
-            data.userId = userId;
+            data.userId = sessionStorage.getItem("userId");
             console.log("Data to be sent:", data);
+    
             fetch("/api/sales-order/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -102,11 +130,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then((result) => {
                     if (result.success) {
                         alert(result.message);
-
+    
                         if (result.receipt) {
                             showPrintPopup(result.receipt);
                         }
-
+    
                         form.reset();
                     } else {
                         alert("Error: " + result.message);
@@ -115,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .catch((err) => console.error("Error processing transaction:", err));
         });
     }
-
+    
     // Initialize Sales Process (Fetch Unpaid Transactions)
     function initializeSalesProcess() {
         const unpaidOrdersTable = document.getElementById("unpaid-orders-body");
@@ -191,86 +219,146 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    // Manage Distribution (Show Paid Transactions)
-    function initializeManageDistribution() {
-        const distributionOrdersTable = document.getElementById("distribution-orders-body");
-        const dateFilter = document.getElementById("date-filter");
-        const searchBar = document.getElementById("search-bar");
+// Manage Distribution (Show Paid Transactions)
+function initializeManageDistribution() {
+    const distributionOrdersTable = document.getElementById("distribution-orders-body");
+    const startDateInput = document.getElementById("start-date");
+    const endDateInput = document.getElementById("end-date");
+    const searchBar = document.getElementById("search-bar");
+    const prevPage = document.getElementById("prev-page");
+    const nextPage = document.getElementById("next-page");
+    const currentPageSpan = document.getElementById("current-page");
 
-        function fetchAndDisplayTransactions() {
-            const selectedDate = dateFilter.value;
-            const searchName = searchBar.value.trim();
+    let currentPage = 1;
+    const recordsPerPage = 10;
 
-            fetch(`/api/sales-order/paid?date=${selectedDate}&name=${searchName}&userId=${userId}`) // Filter by userId
-                .then((res) => {
-                    if (!res.ok) throw new Error("Failed to fetch paid transactions.");
-                    return res.json();
-                })
-                .then((data) => {
-                    if (data.success) {
-                        const transactions = data.transactions;
+    // Function to fetch and display transactions with Date & Time Paid only
+    function fetchAndDisplayTransactions() {
+        const startDate = startDateInput.value || null; // Default to null if empty
+        const endDate = endDateInput.value || null; // Default to null if empty
+        const searchName = searchBar.value.trim(); // Get the search term
 
-                        // Clear previous rows
-                        distributionOrdersTable.innerHTML = "";
+        const params = new URLSearchParams();
+        params.append("page", currentPage);
+        params.append("limit", recordsPerPage);
 
-                        transactions.forEach((transaction) => {
-                            const row = document.createElement("tr");
-
-                            row.innerHTML = `
-                                <td>${transaction.customer_name}</td>
-                                <td>${transaction.number_of_loads}</td>
-                                <td>${new Date(transaction.created_at).toLocaleString()}</td>
-                                <td>
-                                    <button class="mark-claimed-btn" data-id="${transaction.id}">Mark as Claimed</button>
-                                </td>
-                            `;
-
-                            distributionOrdersTable.appendChild(row);
-                        });
-
-                        const claimButtons = document.querySelectorAll(".mark-claimed-btn");
-                        claimButtons.forEach((button) => {
-                            button.addEventListener("click", (e) => {
-                                const orderId = e.target.getAttribute("data-id");
-                                markAsClaimed(orderId, e.target.closest('tr'));
-                            });
-                        });
-                    } else {
-                        distributionOrdersTable.innerHTML = `<tr><td colspan="4">No results found.</td></tr>`;
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error fetching paid transactions:", err);
-                    distributionOrdersTable.innerHTML = `<tr><td colspan="4">Error loading transactions.</td></tr>`;
-                });
+        // Always append the search term to the params if it's present
+        if (searchName) {
+            params.append("name", searchName);
         }
 
-        dateFilter.addEventListener("change", fetchAndDisplayTransactions);
-        searchBar.addEventListener("input", fetchAndDisplayTransactions);
+        // Append the date range to params for filtering by "Date Paid"
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
 
-        fetchAndDisplayTransactions();
-    }
-
-    // Mark Transaction as Claimed
-    function markAsClaimed(orderId, rowElement) {
-        fetch(`/api/sales-order/mark-claimed/${orderId}`, {
-            method: "POST",
-        })
+        fetch(`/api/sales-order/paid?${params.toString()}`)
             .then((res) => res.json())
             .then((data) => {
                 if (data.success) {
-                    alert(data.message);
+                    distributionOrdersTable.innerHTML = ""; // Clear previous data
 
-                    if (rowElement) rowElement.remove();
-                } else {
-                    alert("Failed to mark as claimed.");
+                    if (data.transactions.length === 0) {
+                        distributionOrdersTable.innerHTML = `<tr><td colspan="4">No transactions found.</td></tr>`;
+                        return;
+                    }
+
+                    // Populate table rows
+                    data.transactions.forEach((transaction) => {
+                        const formattedDate = transaction.paid_at
+                            ? new Date(transaction.paid_at).toLocaleString("en-US", {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                              })
+                            : "N/A";
+
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${transaction.customer_name}</td>
+                            <td>${transaction.number_of_loads}</td>
+                            <td>${formattedDate}</td> <!-- Show formatted Date & Time Paid -->
+                            <td>
+                                <button class="mark-claimed-btn" data-id="${transaction.id}">Mark as Claimed</button>
+                            </td>
+                        `;
+                        distributionOrdersTable.appendChild(row);
+                    });
+
+                    // Add event listener to "Mark as Claimed" buttons
+                    document.querySelectorAll(".mark-claimed-btn").forEach((button) => {
+                        button.addEventListener("click", (e) => {
+                            const orderId = e.target.dataset.id;
+                            markAsClaimed(orderId, e.target.closest("tr"));
+                        });
+                    });
+
+                    updatePagination(data.totalPages); // Update pagination controls
                 }
             })
             .catch((err) => {
-                console.error("Error marking order as claimed:", err);
-                alert("Error marking order as claimed.");
+                console.error("Error fetching transactions:", err);
+                distributionOrdersTable.innerHTML = `<tr><td colspan="4">Error loading transactions.</td></tr>`;
             });
     }
+
+    // Update pagination controls
+    function updatePagination(totalPages) {
+        currentPageSpan.textContent = currentPage;
+        prevPage.disabled = currentPage === 1;
+        nextPage.disabled = currentPage >= totalPages;
+    }
+
+    // Event listeners for pagination
+    prevPage.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchAndDisplayTransactions();
+        }
+    });
+
+    nextPage.addEventListener("click", () => {
+        currentPage++;
+        fetchAndDisplayTransactions();
+    });
+
+    // Event listeners for date range changes
+    startDateInput.addEventListener("change", () => {
+        currentPage = 1; // Reset to first page on date change
+        fetchAndDisplayTransactions();
+    });
+
+    endDateInput.addEventListener("change", () => {
+        currentPage = 1; // Reset to first page on date change
+        fetchAndDisplayTransactions();
+    });
+
+    // Live search functionality: trigger search on input change
+    searchBar.addEventListener("input", () => {
+        currentPage = 1; // Reset to first page on search input
+        fetchAndDisplayTransactions();
+    });
+
+    fetchAndDisplayTransactions(); // Initial fetch when the page loads
+}
+
+function markAsClaimed(orderId, rowElement) {
+    fetch(`/api/sales-order/mark-claimed/${orderId}`, {
+        method: "POST",
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.success) {
+                alert(data.message);
+                if (rowElement) rowElement.remove(); // Remove the row after marking as claimed
+            } else {
+                alert("Failed to mark as claimed.");
+            }
+        })
+        .catch((err) => {
+            console.error("Error marking as claimed:", err);
+            alert("Error marking as claimed.");
+        });
+}
+
 
     // View Sales Records with Filters
     function initializeViewSalesRecord() {
@@ -281,23 +369,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const prevPage = document.getElementById("prev-page");
         const nextPage = document.getElementById("next-page");
         const currentPageSpan = document.getElementById("current-page");
-
+        const dateFilterDropdown = document.getElementById("date-filter-dropdown"); // New dropdown for header filter
+    
         let currentPage = 1;
-
+        let dateField = "created_at"; // Default field to show in the column
+    
+        const formatDate = (date) => {
+            return date
+                ? new Date(date).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })
+                : "N/A";
+        };
+    
         function fetchRecords() {
             const search = searchBar.value.trim();
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
-
-            fetch(`/api/sales-order/sales-records?page=${currentPage}&search=${search}&startDate=${startDate}&endDate=${endDate}&userId=${userId}`)
+    
+            fetch(`/api/sales-order/sales-records?page=${currentPage}&search=${search}&startDate=${startDate}&endDate=${endDate}`)
                 .then((res) => res.json())
                 .then((data) => {
                     if (data.success) {
                         recordsBody.innerHTML = "";
-
+    
                         data.records.forEach((record) => {
                             const row = document.createElement("tr");
-
+    
                             row.innerHTML = `
                                 <td>${record.customer_name}</td>
                                 <td>${record.number_of_loads}</td>
@@ -305,14 +401,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <td>${record.detergent_count}</td>
                                 <td>${record.fabric_softener_count}</td>
                                 <td>PHP ${record.total_cost}</td>
-                                <td class="${record.payment_status === 'Paid' ? 'paid' : 'unpaid'}">${record.payment_status}</td>
-                                <td class="${record.claimed_status === 'Claimed' ? 'claimed' : 'unclaimed'}">${record.claimed_status}</td>
-                                <td>${new Date(record.created_at).toLocaleString()}</td>
+                                <td class="${record.payment_status === "Paid" ? "paid" : "unpaid"}">${record.payment_status}</td>
+                                <td class="${record.claimed_status === "Claimed" ? "claimed" : "unclaimed"}">${record.claimed_status}</td>
+                                <td>${formatDate(record[dateField])}</td>
                             `;
-
+    
                             recordsBody.appendChild(row);
                         });
-
+    
                         currentPageSpan.textContent = currentPage;
                         prevPage.disabled = currentPage === 1;
                         nextPage.disabled = currentPage >= data.pages;
@@ -322,29 +418,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
                 .catch((err) => console.error("Error fetching sales records:", err));
         }
-
+    
         fetchRecords();
-
+    
         searchBar.addEventListener("input", () => {
             currentPage = 1;
             fetchRecords();
         });
-
+    
         startDateInput.addEventListener("change", fetchRecords);
         endDateInput.addEventListener("change", fetchRecords);
-
+    
         prevPage.addEventListener("click", () => {
             if (currentPage > 1) {
                 currentPage--;
                 fetchRecords();
             }
         });
-
+    
         nextPage.addEventListener("click", () => {
             currentPage++;
             fetchRecords();
         });
+    
+        // Handle date filter dropdown changes
+        dateFilterDropdown.addEventListener("change", (e) => {
+            dateField = e.target.value; // Update the dateField based on the dropdown selection
+            fetchRecords(); // Refresh the table with the selected date field
+        });
     }
+    
+    
 
     // Show Print Popup for Receipt
     function showPrintPopup(receiptUrl) {

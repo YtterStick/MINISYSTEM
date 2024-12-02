@@ -16,23 +16,35 @@ const PRICING = {
     fabricSoftenerCost: 13,
     plasticFee: 3.0,
 };
-
 router.post("/process", isAuthenticated("Staff"), async (req, res) => {
     try {
         const {
-            userId,
             customerName,
             numberOfLoads,
             services,
             detergentCount,
             fabricSoftenerCount,
             paymentStatus,
+            userId,
         } = req.body;
 
         const branchId = req.session.user.branch_id; // Retrieve branch_id from session
         const db = req.app.get("db");
 
         console.log("Received request data:", req.body);
+
+        // Pricing structure (check if the values are correct)
+        const PRICING = {
+            services: {
+                Wash: 95,
+                Dry: 65,
+                "Wash & Dry": 130,
+                "Special Service": 200,
+            },
+            detergentCost: 17,
+            fabricSoftenerCost: 13,
+            plasticFee: 3.0,
+        };
 
         const baseCost = PRICING.services[services] || 0;
         const totalCost =
@@ -45,15 +57,15 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
             INSERT INTO sales_orders (
                 user_id, customer_name, number_of_loads, services,
                 detergent_count, fabric_softener_count, additional_fees, total_cost,
-                payment_status, branch_id, month_created, paid_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                payment_status, branch_id, month_created, paid_at, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const monthCreated = new Date().toLocaleString("en-US", { month: "long" });
 
-        // If payment status is "Paid," set the `paid_at` timestamp to now
-        const paidAt = paymentStatus === "Paid" ? new Date() : null;
+        const currentDate = new Date();
+        const paidAt = paymentStatus === "Paid" ? currentDate : null; // Set paid_at if payment is made
+        const createdAt = currentDate; // Use the current timestamp for created_at
 
+        // Insert the transaction
         db.query(
             query,
             [
@@ -67,8 +79,9 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
                 totalCost,
                 paymentStatus,
                 branchId,
-                monthCreated,
-                paidAt, // Include the paid_at timestamp
+                new Date().toLocaleString("en-US", { month: "long" }), // Month created (you can format as needed)
+                paidAt,
+                createdAt, // created_at is set to current timestamp
             ],
             async (err, result) => {
                 if (err) {
@@ -86,9 +99,9 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
                             fabricSoftenerCount,
                             additionalFees: PRICING.plasticFee,
                             totalCost,
-                            createdAt: new Date(), // Use current timestamp for created_at
-                            paidAt, // Use the paid_at timestamp if applicable
-                            claimedAt: null, // No claimed timestamp initially
+                            createdAt,
+                            paidAt,
+                            claimedAt: null,
                         });
 
                         const receiptFileName = `receipt_${result.insertId || Date.now()}.pdf`;
@@ -118,6 +131,8 @@ router.post("/process", isAuthenticated("Staff"), async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error." });
     }
 });
+
+
 router.get("/paid", isAuthenticated("Staff"), (req, res) => {
     const { startDate, endDate, name, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
@@ -142,13 +157,12 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
         params.push(`${endDate} 23:59:59`); // Use end of the day
     }
 
-    // Apply search filter for customer name
+
     if (name) {
         query += ` AND customer_name LIKE ?`;
         params.push(`%${name}%`);
     }
 
-    // Pagination and sorting by 'Date Paid' (paid_at)
     query += ` ORDER BY paid_at DESC LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), parseInt(offset));
 
@@ -158,7 +172,6 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch paid transactions." });
         }
 
-        // Fetch the total number of records for pagination
         const countQuery = `SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'`;
         db.query(countQuery, [branchId], (err, countResult) => {
             if (err) {
@@ -170,7 +183,7 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
             res.status(200).json({
                 success: true,
                 transactions: result,
-                totalPages: Math.ceil(totalRecords / limit), // Calculate total pages for pagination
+                totalPages: Math.ceil(totalRecords / limit), 
             });
         });
     });
@@ -180,7 +193,7 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
 router.get("/unpaid", isAuthenticated("Staff"), (req, res) => {
     const db = req.app.get("db");
 
-    const branchId = req.session.user.branch_id; // Retrieve branch_id from session
+    const branchId = req.session.user.branch_id;
 
     const query = `
         SELECT * FROM sales_orders
@@ -202,13 +215,15 @@ router.post("/mark-paid/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
+    const currentTimestamp = new Date().toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:MM:SS
+
     const query = `
         UPDATE sales_orders
-        SET payment_status = 'Paid', claimed_status = 'Unclaimed', paid_at = NOW()
+        SET payment_status = 'Paid', claimed_status = 'Unclaimed', paid_at = ?
         WHERE id = ? AND branch_id = ?
     `;
 
-    db.query(query, [orderId, req.session.user.branch_id], async (err, result) => {
+    db.query(query, [currentTimestamp, orderId, req.session.user.branch_id], async (err, result) => {
         if (err) {
             console.error("Error updating payment status:", err);
             return res.status(500).json({ success: false, message: "Failed to update payment status." });
@@ -262,15 +277,17 @@ router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
+    const currentTimestamp = new Date().toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:MM:SS
+
     const query = `
         UPDATE sales_orders
-        SET claimed_status = 'Claimed', claimed_at = NOW()
+        SET claimed_status = 'Claimed', claimed_at = ?
         WHERE id = ? AND branch_id = ?
     `;
 
-    db.query(query, [orderId, req.session.user.branch_id], (err, result) => {
+    db.query(query, [currentTimestamp, orderId, req.session.user.branch_id], (err, result) => {
         if (err) {
-            console.error("Error marking order as claimed:", err);
+            console.error("Error marking as claimed:", err);
             return res.status(500).json({ success: false, message: "Failed to mark order as claimed." });
         }
 
@@ -280,33 +297,43 @@ router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
         });
     });
 });
+
 router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
-    const { search, startDate, endDate, page = 1 } = req.query;
+    const { search, startDate, endDate, page = 1, limit = 10, selectedDateField } = req.query;
+    const offset = (page - 1) * limit;
     const db = req.app.get("db");
 
-    const branchId = req.session.user.branch_id;
+    const dateField = selectedDateField || "created_at"; // Default to "created_at" if not provided
 
-    let query = `SELECT * FROM sales_orders WHERE branch_id = ?`;
-    const params = [branchId];
+    // Build the query with filters
+    let query = `
+        SELECT 
+            id, customer_name, number_of_loads, services, 
+            detergent_count, fabric_softener_count, total_cost, 
+            payment_status, claimed_status, created_at, paid_at, claimed_at,
+            CASE 
+                WHEN ? = 'created_at' THEN DATE_FORMAT(created_at, '%m/%d/%Y %l:%i %p')
+                WHEN ? = 'paid_at' THEN IF(paid_at IS NULL, 'N/A', DATE_FORMAT(paid_at, '%m/%d/%Y %l:%i %p'))
+                WHEN ? = 'claimed_at' THEN IF(claimed_at IS NULL, 'N/A', DATE_FORMAT(claimed_at, '%m/%d/%Y %l:%i %p'))
+                ELSE 'N/A'
+            END AS formatted_date_time
+        FROM sales_orders
+        WHERE branch_id = ? 
+    `;
+    const params = [selectedDateField, selectedDateField, selectedDateField, req.session.user.branch_id];
 
-    // Handle search functionality
     if (search) {
         query += ` AND customer_name LIKE ?`;
         params.push(`%${search}%`);
     }
 
-    // Handle start and end date filtering
     if (startDate && endDate) {
-        // Ensure the date filter includes the entire day
-        query += ` AND created_at BETWEEN ? AND ?`;
-        params.push(`${startDate} 00:00:00`);  // Start at the beginning of the day
-        params.push(`${endDate} 23:59:59`);  // End at the last moment of the day
+        query += ` AND DATE(${dateField}) BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')`;
+        params.push(startDate, endDate);
     }
 
-    const limit = 10;
-    const offset = (page - 1) * limit;
-    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    query += ` ORDER BY ${dateField} DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), parseInt(offset));
 
     db.query(query, params, (err, result) => {
         if (err) {
@@ -314,24 +341,36 @@ router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch sales records." });
         }
 
-        // Query to get total count for pagination
-        db.query(`SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ?`, [branchId], (err, countResult) => {
+        // Format date fields in the result before sending to frontend
+        const formattedRecords = result.map(record => ({
+            ...record,
+            formatted_date_time: record.formatted_date_time || 'N/A', // Dynamically populated
+        }));
+
+        // Query to get the total number of records for pagination
+        const countQuery = `SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ?`;
+        db.query(countQuery, [req.session.user.branch_id], (err, countResult) => {
             if (err) {
                 console.error("Error fetching total count:", err);
                 return res.status(500).json({ success: false, message: "Failed to fetch total count." });
             }
 
             const totalRecords = countResult[0].total;
-            const totalPages = Math.ceil(totalRecords / limit);
-
             res.status(200).json({
                 success: true,
-                records: result,
-                pages: totalPages,
+                records: formattedRecords,
+                totalPages: Math.ceil(totalRecords / limit),
             });
         });
     });
 });
+
+
+function formatDateTime(date) {
+    const newDate = new Date(date);
+    return newDate.toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" });
+}
+
 
 async function generateReceiptPDF(data) {
     const pdfDoc = await PDFDocument.create();
@@ -379,7 +418,31 @@ async function generateReceiptPDF(data) {
 
     return await pdfDoc.save();
 }
+router.get("/branch-stats", isAuthenticated("Staff"), (req, res) => {
+    const db = req.app.get("db");
+    const branchId = req.session.user.branch_id;
 
+    const query = `
+    SELECT 
+        SUM(CASE WHEN payment_status = 'Paid' THEN total_cost ELSE 0 END) AS total_income,
+        SUM(number_of_loads) AS total_sales
+    FROM sales_orders
+    WHERE branch_id = ? 
+    AND DATE(created_at) = CURDATE(); -- Include all today's transactions
+`;
 
+    db.query(query, [branchId], (err, result) => {
+        if (err) {
+            console.error("Error fetching branch stats:", err);
+            return res.status(500).json({ success: false, message: "Failed to fetch branch stats." });
+        }
 
+        const stats = {
+            totalIncome: result[0]?.total_income || 0,
+            totalSales: result[0]?.total_sales || 0,
+        };
+
+        res.status(200).json({ success: true, stats });
+    });
+});
 module.exports = router;

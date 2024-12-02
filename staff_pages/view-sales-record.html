@@ -2,15 +2,22 @@
     <h2>View Sales Records</h2>
 
     <div class="filters">
-        <input
-            type="text"
-            id="search-bar"
-            placeholder="Search by customer name"
-        />
+        <label for="date-filter-dropdown">Filter By Date:</label>
+        <select id="date-filter-dropdown">
+            <option value="created_at">Date Created</option>
+            <option value="paid_at">Date Paid</option>
+            <option value="claimed_at">Date Claimed</option>
+        </select>        
+    
         <label for="start-date">Start Date:</label>
         <input type="date" id="start-date">
         <label for="end-date">End Date:</label>
         <input type="date" id="end-date">
+        <input
+        type="text"
+        id="search-bar"
+        placeholder="Search by customer name"
+    />
     </div>
 
     <table class="sales-record-table">
@@ -24,13 +31,7 @@
                 <th>Total Cost</th>
                 <th>Payment Status</th>
                 <th>Claimed Status</th>
-                <th>
-                    <select class="date-filter" id="date-filter-dropdown">
-                        <option value="created_at" selected>Date Created</option>
-                        <option value="paid_at">Date Paid</option>
-                        <option value="claimed_at">Date Claimed</option>
-                    </select>
-                </th>
+                <th>Date & Time</th>
             </tr>
         </thead>
         <tbody id="sales-records-body">

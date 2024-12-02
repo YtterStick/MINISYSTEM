@@ -3,7 +3,6 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const isAuthenticated = require("../middleware/auth"); // Correct import path for the middleware
 
-// User Login
 router.post("/login", (req, res) => {
     const { username, password } = req.body;
     const db = req.app.get("db");
@@ -16,7 +15,6 @@ router.post("/login", (req, res) => {
 
         const user = results[0];
 
-        // Compare password with hashed password
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             return res.status(400).send("Invalid password.");
@@ -32,7 +30,6 @@ router.post("/login", (req, res) => {
     });
 });
 
-// Logout route for all users (Admin and Staff)
 router.get("/logout", isAuthenticated(), (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -40,11 +37,9 @@ router.get("/logout", isAuthenticated(), (req, res) => {
             return res.status(500).send("Error during logout");
         }
 
-        // Clear the session cookie in the browser
         res.clearCookie('connect.sid');
         
-        // Redirect to the login page after logout
-        res.redirect("/"); // Adjust the redirect URL as needed
+        res.redirect("/");
     });
 });
 

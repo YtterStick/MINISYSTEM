@@ -37,14 +37,24 @@ const db = mysql.createConnection({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    timezone: '+8:00',
 });
+db.query("SELECT NOW()", (err, result) => {
+    if (err) {
+        console.error("Error fetching current date:", err);
+    } else {
+        console.log("Current date from MySQL:", result);
+    }
+ });
 
 db.connect(err => {
     if (err) throw err;
     console.log('Connected to MySQL');
 });
 
+
 app.set('db', db);
+
 
 
 app.use("/api/accounts", require("./routes/accounts"));

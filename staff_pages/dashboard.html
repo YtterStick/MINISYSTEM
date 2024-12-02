@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body">
                     <h5>Today Income</h5>
-                    <p>&#8369;0</p>
+                    <p id="today-income">&#8369;0.00</p> <!-- Added id here -->
                 </div>
             </div>
         </div>
@@ -23,24 +23,19 @@
                     <img src="/assets/outcome.svg" alt="Outcome">
                 </div>
                 <div class="card-body">
-                    <h5>Today Sales</h5>
-                    <p>&#8369;0</p>
+                    <h5>Today Loads</h5>
+                    <p id="today-sales">&#8369;0</p> <!-- Optional: Add id for sales if needed -->
                 </div>
             </div>
         </div>
-        <div class="card">
-           <div class="head">
-            <h1>Records</h1>
-           </div>
-            <div class="card-content">
-                 
+        <div class="card dashboard-records">
+            <div class="head">
+                <h1>Records</h1>
             </div>
-            <!-- <div class="button-card">
-                <div class="btn right-align">
-                    <button class="btn btn-primary">View Report</button>
-                    <button class="btn btn-outline">Download</button>
-                </div>
-            </div> -->
+            <div class="card-content" id="records-table">
+                
+                <p class="no-records" style="display: none;">No records for today.</p>
+            </div>
         </div>
     </div>
 </div>

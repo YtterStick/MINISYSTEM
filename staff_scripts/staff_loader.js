@@ -13,12 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((response) => response.json())
             .then((data) => {
                 const { totalIncome, totalSales } = data.stats;
-
+    
                 const incomeElement = document.getElementById("today-income");
                 if (incomeElement) {
                     incomeElement.textContent = `₱${parseFloat(totalIncome).toFixed(2)}`;
                 }
-
+    
                 const salesElement = document.getElementById("today-sales");
                 if (salesElement) {
                     salesElement.textContent = `${parseInt(totalSales)}`;
@@ -27,8 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch((error) => {
                 console.error("Error fetching today's stats:", error);
             });
-    }
-
+    }    
 
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
@@ -256,122 +255,54 @@ document.addEventListener("DOMContentLoaded", () => {
     // Manage Distribution (Show Paid Transactions)
     function initializeManageDistribution() {
         const distributionOrdersTable = document.getElementById("distribution-orders-body");
-        const startDateInput = document.getElementById("start-date");
-        const endDateInput = document.getElementById("end-date");
-        const searchBar = document.getElementById("search-bar");
-        const prevPage = document.getElementById("prev-page");
-        const nextPage = document.getElementById("next-page");
-        const currentPageSpan = document.getElementById("current-page");
-
-        let currentPage = 1;
-        const recordsPerPage = 10;
-
-        function fetchAndDisplayTransactions() {
-            const startDate = startDateInput.value || null; // Default to null if empty
-            const endDate = endDateInput.value || null; // Default to null if empty
-            const searchName = searchBar.value.trim(); // Get the search term
-
-            const params = new URLSearchParams();
-            params.append("page", currentPage);
-            params.append("limit", recordsPerPage);
-
-            // Always append the search term to the params if it's present
-            if (searchName) {
-                params.append("name", searchName);
-            }
-
-            // Append the date range to params for filtering by "Date Paid"
-            if (startDate) params.append("startDate", startDate);
-            if (endDate) params.append("endDate", endDate);
-
-            fetch(`/api/sales-order/paid?${params.toString()}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data.success) {
-                        distributionOrdersTable.innerHTML = ""; // Clear previous data
-
-                        if (data.transactions.length === 0) {
-                            distributionOrdersTable.innerHTML = `<tr><td colspan="4">No transactions found.</td></tr>`;
-                            return;
-                        }
-
-                        // Populate table rows
-                        data.transactions.forEach((transaction) => {
-                            const formattedDate = transaction.paid_at
-                                ? new Date(transaction.paid_at).toLocaleString("en-US", {
-                                    dateStyle: "short",
-                                    timeStyle: "short",
-                                })
-                                : "N/A";
-
-                            const row = document.createElement("tr");
-                            row.innerHTML = `
-                                <td>${transaction.customer_name}</td>
-                                <td>${transaction.number_of_loads}</td>
-                                <td>${formattedDate}</td> <!-- Show formatted Date & Time Paid -->
-                                <td>
-                                    <button class="mark-claimed-btn" data-id="${transaction.id}">Mark as Claimed</button>
-                                </td>
-                            `;
-                            distributionOrdersTable.appendChild(row);
-                        });
-
+    
+        fetch(`/api/sales-order/paid?userId=${userId}`) // Include userId in the request
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    const transactions = data.transactions;
+    
+                    distributionOrdersTable.innerHTML = "";
+    
+                    transactions.forEach((transaction) => {
+                        const row = document.createElement("tr");
+    
+                        const formattedDate = transaction.paid_at
+                            ? new Date(transaction.paid_at).toLocaleString("en-US", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                            })
+                            : "N/A";
+    
+                        const claimButton = transaction.load_status === "Completed" && transaction.payment_status === "Paid" 
+                            ? `<button class="mark-claimed-btn" data-id="${transaction.id}">Mark as Claimed</button>` 
+                            : `<button class="mark-claimed-btn" disabled>Cannot Claim</button>`;
+    
+                        row.innerHTML = `
+                            <td>${transaction.customer_name}</td>
+                            <td>${transaction.number_of_loads}</td>
+                            <td>${formattedDate}</td>
+                            <td>${claimButton}</td>
+                        `;
+    
+                        distributionOrdersTable.appendChild(row);
+    
                         // Add event listener to "Mark as Claimed" buttons
-                        document.querySelectorAll(".mark-claimed-btn").forEach((button) => {
-                            button.addEventListener("click", (e) => {
+                        const claimButtonElement = row.querySelector(".mark-claimed-btn");
+                        if (claimButtonElement && !claimButtonElement.disabled) {
+                            claimButtonElement.addEventListener("click", (e) => {
                                 const orderId = e.target.dataset.id;
                                 markAsClaimed(orderId, e.target.closest("tr"));
                             });
-                        });
-
-                        updatePagination(data.totalPages); // Update pagination controls
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error fetching transactions:", err);
-                    distributionOrdersTable.innerHTML = `<tr><td colspan="4">Error loading transactions.</td></tr>`;
-                });
-        }
-
-        // Update pagination controls
-        function updatePagination(totalPages) {
-            currentPageSpan.textContent = currentPage;
-            prevPage.disabled = currentPage === 1;
-            nextPage.disabled = currentPage >= totalPages;
-        }
-
-        // Event listeners for pagination
-        prevPage.addEventListener("click", () => {
-            if (currentPage > 1) {
-                currentPage--;
-                fetchAndDisplayTransactions();
-            }
-        });
-
-        nextPage.addEventListener("click", () => {
-            currentPage++;
-            fetchAndDisplayTransactions();
-        });
-
-        // Event listeners for date range changes
-        startDateInput.addEventListener("change", () => {
-            currentPage = 1; // Reset to first page on date change
-            fetchAndDisplayTransactions();
-        });
-
-        endDateInput.addEventListener("change", () => {
-            currentPage = 1; // Reset to first page on date change
-            fetchAndDisplayTransactions();
-        });
-
-        // Live search functionality: trigger search on input change
-        searchBar.addEventListener("input", () => {
-            currentPage = 1; // Reset to first page on search input
-            fetchAndDisplayTransactions();
-        });
-
-        fetchAndDisplayTransactions(); // Initial fetch when the page loads
+                        }
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error("Error fetching transactions:", err);
+            });
     }
+    
 
     function markAsClaimed(orderId, rowElement) {
         fetch(`/api/sales-order/mark-claimed/${orderId}`, {

@@ -139,24 +139,21 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
     const db = req.app.get("db");
     const branchId = req.session.user.branch_id; // Retrieve branch_id from session
 
-    // Base query for paid transactions
     let query = `
         SELECT * FROM sales_orders
-        WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'
+        WHERE branch_id = ? AND payment_status = 'Paid' AND load_status = 'Completed' AND claimed_status != 'Claimed'
     `;
     const params = [branchId];
 
-    // Apply date filters based on 'Date Paid' (paid_at)
     if (startDate) {
         query += ` AND paid_at >= ?`;
-        params.push(`${startDate} 00:00:00`); // Use start of the day
+        params.push(`${startDate} 00:00:00`);
     }
 
     if (endDate) {
         query += ` AND paid_at <= ?`;
-        params.push(`${endDate} 23:59:59`); // Use end of the day
+        params.push(`${endDate} 23:59:59`);
     }
-
 
     if (name) {
         query += ` AND customer_name LIKE ?`;
@@ -172,7 +169,7 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
             return res.status(500).json({ success: false, message: "Failed to fetch paid transactions." });
         }
 
-        const countQuery = `SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ? AND payment_status = 'Paid' AND claimed_status != 'Claimed'`;
+        const countQuery = `SELECT COUNT(*) AS total FROM sales_orders WHERE branch_id = ? AND payment_status = 'Paid' AND load_status = 'Completed' AND claimed_status != 'Claimed'`;
         db.query(countQuery, [branchId], (err, countResult) => {
             if (err) {
                 console.error("Error fetching total count:", err);
@@ -183,11 +180,12 @@ router.get("/paid", isAuthenticated("Staff"), (req, res) => {
             res.status(200).json({
                 success: true,
                 transactions: result,
-                totalPages: Math.ceil(totalRecords / limit), 
+                totalPages: Math.ceil(totalRecords / limit),
             });
         });
     });
 });
+
 
 
 router.get("/unpaid", isAuthenticated("Staff"), (req, res) => {
@@ -277,23 +275,47 @@ router.post("/mark-claimed/:orderId", isAuthenticated("Staff"), (req, res) => {
     const { orderId } = req.params;
     const db = req.app.get("db");
 
-    const currentTimestamp = new Date().toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:MM:SS
-
-    const query = `
-        UPDATE sales_orders
-        SET claimed_status = 'Claimed', claimed_at = ?
+    // Check if the order is paid and completed
+    const checkQuery = `
+        SELECT load_status, payment_status FROM sales_orders 
         WHERE id = ? AND branch_id = ?
     `;
 
-    db.query(query, [currentTimestamp, orderId, req.session.user.branch_id], (err, result) => {
+    db.query(checkQuery, [orderId, req.session.user.branch_id], (err, result) => {
         if (err) {
-            console.error("Error marking as claimed:", err);
-            return res.status(500).json({ success: false, message: "Failed to mark order as claimed." });
+            console.error("Error fetching order details:", err);
+            return res.status(500).json({ success: false, message: "Failed to fetch order details." });
         }
 
-        res.status(200).json({
-            success: true,
-            message: "Order marked as claimed.",
+        if (result.length === 0) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const order = result[0];
+
+        // Ensure the order is completed and paid
+        if (order.load_status !== "Completed" || order.payment_status !== "Paid") {
+            return res.status(400).json({ success: false, message: "Order must be completed and paid before claiming." });
+        }
+
+        // Update claimed status to 'Claimed'
+        const currentTimestamp = new Date().toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:MM:SS
+        const updateQuery = `
+            UPDATE sales_orders
+            SET claimed_status = 'Claimed', claimed_at = ?
+            WHERE id = ? AND branch_id = ?
+        `;
+
+        db.query(updateQuery, [currentTimestamp, orderId, req.session.user.branch_id], (err, result) => {
+            if (err) {
+                console.error("Error marking order as claimed:", err);
+                return res.status(500).json({ success: false, message: "Failed to mark order as claimed." });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Order successfully marked as claimed.",
+            });
         });
     });
 });
@@ -423,13 +445,13 @@ router.get("/branch-stats", isAuthenticated("Staff"), (req, res) => {
     const branchId = req.session.user.branch_id;
 
     const query = `
-    SELECT 
-        SUM(CASE WHEN payment_status = 'Paid' THEN total_cost ELSE 0 END) AS total_income,
-        SUM(number_of_loads) AS total_sales
-    FROM sales_orders
-    WHERE branch_id = ? 
-    AND DATE(created_at) = CURDATE(); -- Include all today's transactions
-`;
+        SELECT 
+            SUM(CASE WHEN payment_status = 'Paid' THEN total_cost ELSE 0 END) AS total_income,
+            SUM(number_of_loads) AS total_sales
+        FROM sales_orders
+        WHERE branch_id = ? 
+        AND DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) = CURDATE();  -- Convert to PH time (+08:00)
+    `;
 
     db.query(query, [branchId], (err, result) => {
         if (err) {
@@ -445,6 +467,7 @@ router.get("/branch-stats", isAuthenticated("Staff"), (req, res) => {
         res.status(200).json({ success: true, stats });
     });
 });
+
 
 router.get("/load-status", isAuthenticated("Staff"), (req, res) => {
     const db = req.app.get("db");

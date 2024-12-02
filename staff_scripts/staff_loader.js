@@ -85,6 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     initializeManageDistribution();
                 } else if (section === "view-sales-record") {
                     initializeViewSalesRecord();
+                } else if (section === "load-status"){
+                    initializeLoadStatus();
                 }
             })
             .catch(error => {
@@ -390,87 +392,178 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
     function initializeViewSalesRecord() {
-        const recordsBody = document.getElementById("sales-records-body");
-        const searchBar = document.getElementById("search-bar");
-        const startDateInput = document.getElementById("start-date");
-        const endDateInput = document.getElementById("end-date");
-        const prevPage = document.getElementById("prev-page");
-        const nextPage = document.getElementById("next-page");
-        const currentPageSpan = document.getElementById("current-page");
-        const dateFilterDropdown = document.getElementById("date-filter-dropdown");
-    
-        let currentPage = 1;
-        let selectedDateField = "created_at"; // Default to "created_at" field
-    
-        // Fetch records based on selected filters
-        function fetchRecords() {
-            const search = searchBar.value.trim();
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
-    
-            fetch(`/api/sales-order/sales-records?page=${currentPage}&search=${search}&startDate=${startDate}&endDate=${endDate}&selectedDateField=${selectedDateField}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data.success) {
-                        recordsBody.innerHTML = "";
-                        data.records.forEach((record) => {
-                            const row = document.createElement("tr");
-    
-                            // Use the dynamically formatted date
-                            const formattedDateTime = record.formatted_date_time || 'N/A';
-    
-                            row.innerHTML = `
-                                <td>${record.customer_name}</td>
-                                <td>${record.number_of_loads}</td>
-                                <td>${record.services}</td>
-                                <td>${record.detergent_count || 0}</td> <!-- Default to 0 if undefined -->
-                                <td>${record.fabric_softener_count || 0}</td> <!-- Default to 0 if undefined -->
-                                <td>PHP ${record.total_cost}</td>
-                                <td class="${record.payment_status === "Paid" ? "paid" : "unpaid"}">${record.payment_status}</td>
-                                <td class="${record.claimed_status === "Claimed" ? "claimed" : "unclaimed"}">${record.claimed_status}</td>
-                                <td>${formattedDateTime}</td> <!-- Display the dynamic Date & Time -->
-                            `;
-                            recordsBody.appendChild(row);
-                        });
-    
-                        currentPageSpan.textContent = currentPage;
-                        prevPage.disabled = currentPage === 1;
-                        nextPage.disabled = currentPage >= data.totalPages;
-                    }
-                })
-                .catch((err) => console.error("Error fetching sales records:", err));
-        }
-    
-        // Event listeners for filters
-        searchBar.addEventListener("input", () => {
-            currentPage = 1;  // Reset to first page on search input change
-            fetchRecords();
-        });
-    
-        startDateInput.addEventListener("change", fetchRecords);
-        endDateInput.addEventListener("change", fetchRecords);
-    
-        prevPage.addEventListener("click", () => {
-            if (currentPage > 1) {
-                currentPage--;
-                fetchRecords();
-            }
-        });
-    
-        nextPage.addEventListener("click", () => {
-            currentPage++;
-            fetchRecords();
-        });
-    
-        // Date filter dropdown change event
-        dateFilterDropdown.addEventListener("change", (e) => {
-            selectedDateField = e.target.value; // Set selected date field for filtering
-            fetchRecords();
-        });
-    
-        // Initial fetch when the page loads
-        fetchRecords();
+    const recordsBody = document.getElementById("sales-records-body");
+    const searchBar = document.getElementById("search-bar");
+    const startDateInput = document.getElementById("start-date");
+    const endDateInput = document.getElementById("end-date");
+    const prevPage = document.getElementById("prev-page");
+    const nextPage = document.getElementById("next-page");
+    const currentPageSpan = document.getElementById("current-page");
+    const dateFilterDropdown = document.getElementById("date-filter-dropdown");
+
+    let currentPage = 1;
+    let selectedDateField = "created_at"; // Default to "created_at" field
+
+    // Fetch records based on selected filters
+    function fetchRecords() {
+        const search = searchBar.value.trim();
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        fetch(`/api/sales-order/sales-records?page=${currentPage}&search=${search}&startDate=${startDate}&endDate=${endDate}&selectedDateField=${selectedDateField}`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    recordsBody.innerHTML = "";
+                    data.records.forEach((record) => {
+                        const row = document.createElement("tr");
+
+                        // Format the dynamically populated date
+                        const formattedDateTime = record.formatted_date_time || 'N/A';
+
+                        row.innerHTML = `
+                            <td>${record.customer_name}</td>
+                            <td>${record.number_of_loads}</td>
+                            <td>${record.services}</td>
+                            <td>${record.detergent_count || 0}</td>
+                            <td>${record.fabric_softener_count || 0}</td>
+                            <td>PHP ${record.total_cost}</td>
+                            <td class="${record.payment_status === "Paid" ? "paid" : "unpaid"}">${record.payment_status}</td>
+                            <td class="${record.claimed_status === "Claimed" ? "claimed" : "unclaimed"}">${record.claimed_status}</td>
+                            <td>${formattedDateTime}</td> <!-- Dynamically formatted Date & Time -->
+                        `;
+                        recordsBody.appendChild(row);
+                    });
+
+                    currentPageSpan.textContent = currentPage;
+                    prevPage.disabled = currentPage === 1;
+                    nextPage.disabled = currentPage >= data.totalPages;
+                }
+            })
+            .catch((err) => console.error("Error fetching sales records:", err));
     }
+
+    // Event listeners for filters
+    searchBar.addEventListener("input", () => {
+        currentPage = 1;  // Reset to first page on search input change
+        fetchRecords();
+    });
+
+    startDateInput.addEventListener("change", fetchRecords);
+    endDateInput.addEventListener("change", fetchRecords);
+
+    prevPage.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchRecords();
+        }
+    });
+
+    nextPage.addEventListener("click", () => {
+        currentPage++;
+        fetchRecords();
+    });
+
+    // Date filter dropdown change event
+    dateFilterDropdown.addEventListener("change", (e) => {
+        selectedDateField = e.target.value; // Set selected date field for filtering
+        fetchRecords();
+    });
+
+    // Initial fetch when the page loads
+    fetchRecords();
+}
+// Load Status Section
+function initializeLoadStatus() {
+    const loadStatusTableBody = document.getElementById("load-status-table-body");
+
+    if (!loadStatusTableBody) {
+        console.error("Load Status table body element not found.");
+        return;
+    }
+
+    fetch("/api/sales-order/load-status")
+        .then((response) => response.json())
+        .then((data) => {
+            console.log("Load Status API response:", data);
+
+            if (data.success && Array.isArray(data.loadStatus)) {
+                loadStatusTableBody.innerHTML = ""; // Clear previous rows
+
+                // Filter and display only Pending and Ongoing loads
+                const filteredLoads = data.loadStatus.filter((load) => load.load_status !== "Completed");
+
+                if (filteredLoads.length === 0) {
+                    loadStatusTableBody.innerHTML = `<tr><td colspan="5">No pending or ongoing loads.</td></tr>`;
+                    return;
+                }
+
+                filteredLoads.forEach((load) => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${load.customer_name}</td>
+                        <td>${load.number_of_loads}</td>
+                        <td>${new Date(load.created_at).toLocaleString()}</td>
+                        <td>
+                            <span class="${load.load_status.toLowerCase()}-status">${load.load_status}</span>
+                        </td>
+                        <td>
+                            <button class="status-btn ${load.load_status.toLowerCase()}" 
+                                    data-id="${load.id}" 
+                                    data-status="${load.load_status}">
+                                ${load.load_status === "Pending" ? "Process" : "Complete"}
+                            </button>
+                        </td>
+                    `;
+
+                    loadStatusTableBody.appendChild(row);
+                });
+
+                // Add event listeners for buttons
+                document.querySelectorAll(".status-btn").forEach((button) => {
+                    button.addEventListener("click", (e) => {
+                        const orderId = e.target.dataset.id;
+                        const currentStatus = e.target.dataset.status;
+
+                        // Determine next status
+                        const newStatus = currentStatus === "Pending" ? "Ongoing" : "Completed";
+
+                        updateLoadStatus(orderId, newStatus);
+                    });
+                });
+            } else {
+                loadStatusTableBody.innerHTML = `<tr><td colspan="5">No load status records found.</td></tr>`;
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching load statuses:", error);
+            loadStatusTableBody.innerHTML = `<tr><td colspan="5">Error loading load statuses.</td></tr>`;
+        });
+}
+
+// Update Load Status
+function updateLoadStatus(orderId, newStatus) {
+    fetch(`/api/sales-order/update-load-status/${orderId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ load_status: newStatus }),
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.success) {
+                alert("Load status updated successfully!");
+                initializeLoadStatus(); // Refresh the load status table
+            } else {
+                alert("Failed to update load status.");
+            }
+        })
+        .catch((err) => {
+            console.error("Error updating load status:", err);
+            alert("Error updating load status.");
+        });
+}
+
     
     // Show Print Popup for Receipt
     function showPrintPopup(receiptUrl) {

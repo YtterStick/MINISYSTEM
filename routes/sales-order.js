@@ -312,9 +312,9 @@ router.get("/sales-records", isAuthenticated("Staff"), (req, res) => {
             detergent_count, fabric_softener_count, total_cost, 
             payment_status, claimed_status, created_at, paid_at, claimed_at,
             CASE 
-                WHEN ? = 'created_at' THEN DATE_FORMAT(created_at, '%m/%d/%Y %l:%i %p')
-                WHEN ? = 'paid_at' THEN IF(paid_at IS NULL, 'N/A', DATE_FORMAT(paid_at, '%m/%d/%Y %l:%i %p'))
-                WHEN ? = 'claimed_at' THEN IF(claimed_at IS NULL, 'N/A', DATE_FORMAT(claimed_at, '%m/%d/%Y %l:%i %p'))
+                WHEN ? = 'created_at' THEN DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', @@session.time_zone), '%m/%d/%Y %l:%i %p')
+                WHEN ? = 'paid_at' THEN IF(paid_at IS NULL, 'N/A', DATE_FORMAT(CONVERT_TZ(paid_at, '+00:00', @@session.time_zone), '%m/%d/%Y %l:%i %p'))
+                WHEN ? = 'claimed_at' THEN IF(claimed_at IS NULL, 'N/A', DATE_FORMAT(CONVERT_TZ(claimed_at, '+00:00', @@session.time_zone), '%m/%d/%Y %l:%i %p'))
                 ELSE 'N/A'
             END AS formatted_date_time
         FROM sales_orders
@@ -445,4 +445,54 @@ router.get("/branch-stats", isAuthenticated("Staff"), (req, res) => {
         res.status(200).json({ success: true, stats });
     });
 });
+
+router.get("/load-status", isAuthenticated("Staff"), (req, res) => {
+    const db = req.app.get("db");
+    const branchId = req.session.user.branch_id;
+
+    const query = `
+        SELECT id, customer_name, number_of_loads, created_at, load_status
+        FROM sales_orders
+        WHERE branch_id = ? AND load_status != 'Completed'
+        ORDER BY created_at DESC
+    `;
+
+    db.query(query, [branchId], (err, result) => {
+        if (err) {
+            console.error("Error fetching load status:", err);
+            return res.status(500).json({ success: false, message: "Failed to fetch load statuses." });
+        }
+
+        res.status(200).json({ success: true, loadStatus: result });
+    });
+});
+
+router.post("/update-load-status/:orderId", isAuthenticated("Staff"), (req, res) => {
+    const { orderId } = req.params;
+    const { load_status } = req.body;
+    const db = req.app.get("db");
+
+    if (!["Pending", "Ongoing", "Completed"].includes(load_status)) {
+        return res.status(400).json({ success: false, message: "Invalid load status." });
+    }
+
+    const query = `
+        UPDATE sales_orders
+        SET load_status = ?
+        WHERE id = ? AND branch_id = ?
+    `;
+
+    db.query(query, [load_status, orderId, req.session.user.branch_id], (err, result) => {
+        if (err) {
+            console.error("Error updating load status:", err);
+            return res.status(500).json({ success: false, message: "Failed to update load status." });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Load status updated to ${load_status}.`,
+        });
+    });
+});
+
 module.exports = router;

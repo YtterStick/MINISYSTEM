@@ -683,22 +683,6 @@ router.post("/update/:orderId", isAuthenticated("Staff"), async (req, res) => {
 });
 
 // Add a new request
-app.post("/api/requests/create", (req, res) => {
-    const { branch_id, item_name, quantity } = req.body;
-
-    const query = `
-        INSERT INTO requests (branch_id, item_name, quantity, status)
-        VALUES (?, ?, ?, 'Pending');
-    `;
-
-    db.query(query, [branch_id, item_name, quantity], (err, result) => {
-        if (err) {
-            console.error("Error creating request:", err);
-            return res.status(500).json({ success: false, error: "Failed to create request." });
-        }
-        res.json({ success: true, message: "Request created successfully." });
-    });
-});
-
+// 
 
 module.exports = router;
